@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  /* --- Cores Customizadas para a Clínica --- */
+  --color-dentista-primary: #2563EB;
+  --color-dentista-secondary: #06B6D4;
+  --color-dentista-accent: #F59E0B;
+  --color-dentista-surface: #FFFFFF;
+  --color-dentista-background: #F8FAFC;
+  --color-dentista-sidebar: #F1F5F9;
+  
+  /* --- Cores de Texto --- */
+  --color-dentista-title: #1E293B;
+  --color-dentista-body: #64748B;
+
+  /* --- Medidas e Bordas --- */
+  --radius-clinica: 12px;
+}
+
+/* --- Seus Keyframes de Loading --- */
+@keyframes loading {
+  0%   { width: 0%; margin-left: 0%; }
+  50%  { width: 100%; margin-left: 0%; }
+  100% { width: 0%; margin-left: 100%; }
+}
+
+/* --- Estilos Globais Opcionais --- */
+body {
+  background-color: var(--color-dentista-background);
+  color: var(--color-dentista-body);
+  font-family: sans-serif; /* Ou a fonte que você preferir */
+}
