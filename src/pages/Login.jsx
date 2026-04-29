@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { LogIn, Lock, Mail } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../contexts/AuthContext";
 import { fazerLogin } from "../services/authService";
 import Input from "../components/Input";
 import Button from "../components/Button";

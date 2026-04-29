@@ -21,7 +21,7 @@ const WelcomeHeader = () => {
 
       {/* Lado Direito: Card de Perfil */}
       <div 
-        onClick={() => navigate("/perfil-profissional")}
+        onClick={() => navigate("/perfil-profissional")} // Navega para o perfil do profissional usando o ID do usuário
         className="flex items-center gap-5 bg-white p-4 md:p-6 rounded-clinica shadow-sm border border-gray-100 
                    self-start md:self-auto cursor-pointer hover:border-dentista-primary 
                    hover:shadow-md transition-all group"

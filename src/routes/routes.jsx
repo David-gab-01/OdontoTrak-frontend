@@ -34,7 +34,7 @@ const AppRoutes = () => {
           <Route path="nova-consulta" element={<NovaConsulta />} />
           <Route path="novo-profissional" element={<NovoProfissional />} />
           <Route path="ficha-paciente/:id" element={<FichaPaciente />} />
-          <Route path="perfil-profissional" element={<PerfilProfissional />} />
+          <Route path="perfil-profissional/:id" element={<PerfilProfissional />} />
         </Route>
       </Route>
 

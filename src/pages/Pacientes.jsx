@@ -1,37 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserPlus, Search } from "lucide-react";
+import { UserPlus, Search, RefreshCw } from "lucide-react";
 import ListContainer from "../components/ListContainer";
 import ListItem from "../components/ListItem";
 import Button from "../components/Button";
 import Input from "../components/Input";
+import { usePacientes } from "../hooks/usePacientes";
 
 const Pacientes = () => {
   const navigate = useNavigate();
   const [busca, setBusca] = useState("");
+  
+  // Extraindo lógica do nosso hook
+  const { pacientes, carregando, carregarPacientes, excluirPaciente } = usePacientes();
 
-  const pacientesData = [
-    {
-      id: 1,
-      nome: "João Frango",
-      cpf: "000.000.000-01",
-      email: "paciente@email.com",
-    },
-    {
-      id: 2,
-      nome: "Maria Oliveira",
-      cpf: "000.000.000-02",
-      email: "paciente2@email.com",
-    },
-    {
-      id: 3,
-      nome: "Carlos Eduardo",
-      cpf: "000.000.002-22",
-      email: "paciente22@email.com",
-    }
-  ];
+  // Busca inicial de dados
+  useEffect(() => {
+    carregarPacientes();
+  }, [carregarPacientes]);
 
-  const pacientesFiltrados = pacientesData.filter(
+  // Filtro aplicado sobre os dados que vieram da API
+  const pacientesFiltrados = pacientes.filter(
     (p) =>
       p.nome.toLowerCase().includes(busca.toLowerCase()) ||
       p.cpf.includes(busca)
@@ -47,13 +36,16 @@ const Pacientes = () => {
           </p>
         </div>
 
-        <Button 
-          variant="primary" 
-          icon={UserPlus} 
-          onClick={() => navigate("/novo-paciente")}
-        >
-          Novo Paciente
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="ghost" icon={RefreshCw} onClick={carregarPacientes} loading={carregando}> </Button>
+          <Button 
+            variant="primary" 
+            icon={UserPlus} 
+            onClick={() => navigate("/novo-paciente")}
+          >
+            Novo Paciente
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex gap-4 items-end">
@@ -69,29 +61,32 @@ const Pacientes = () => {
         </Button>
       </div>
 
-      {/* --- MUDANÇA AQUI: ListContainer agora abraça os ListItems --- */}
       <ListContainer
         columns={{
           col1: "Paciente / CPF",
-          col2: "E-mail de Contato", // Mudamos o título da coluna
+          col2: "E-mail de Contato",
           col3: "Ações"
         }}
       >
-        {pacientesFiltrados.map((paciente) => (
-          <ListItem
-            key={paciente.id}
-            title={paciente.nome}
-            description={paciente.cpf}
-            badgeText={paciente.email} // O e-mail entra no lugar do status
-            badgeColor="text-gray-500 bg-gray-50 border-gray-100" // Cor neutra
-            actionLabel="Abrir Prontuário"
-            onAction={() => console.log("ID:", paciente.id)}
-          />
-        ))}
+        {carregando ? (
+          <div className="text-center py-10">Carregando pacientes...</div>
+        ) : (
+          pacientesFiltrados.map((paciente) => (
+            <ListItem
+              key={paciente.id}
+              title={paciente.nome}
+              description={paciente.cpf}
+              badgeText={paciente.email}
+              badgeColor="text-gray-500 bg-gray-50 border-gray-100"
+              actionLabel="Abrir Prontuário"
+              onAction={() => navigate(`/ficha-paciente/${paciente.id}`)}
+            />
+          ))
+        )}
 
-        {pacientesFiltrados.length === 0 && (
+        {!carregando && pacientesFiltrados.length === 0 && (
           <div className="text-center py-10 text-gray-400">
-            Nenhum paciente encontrado com "{busca}".
+            Nenhum paciente encontrado.
           </div>
         )}
       </ListContainer>
