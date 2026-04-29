@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from "../contexts/AuthContext"; 
 import { LogOut, User, Mail, Shield } from "lucide-react"; 
-import Button from "../components/Button"; // Importando o seu componente
+import Button from "../components/Button";
 
 const PerfilProfissional = () => {
   const { logout, user } = useAuth();
@@ -45,7 +45,7 @@ const PerfilProfissional = () => {
           </div>
         </div>
 
-        {/* Rodapé do Card com o SEU Botão */}
+        {/* Rodapé do Card */}
         <div className="p-6 bg-gray-50 border-t border-gray-100">
           <Button 
             onClick={handleLogout}

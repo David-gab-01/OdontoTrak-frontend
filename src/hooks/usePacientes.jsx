@@ -7,7 +7,7 @@ export const usePacientes = () => {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
 
-  // Função para listar todos (usada no useEffect das páginas)
+  // Função para listar todos 
   const carregarPacientes = useCallback(async () => {
     setCarregando(true);
     setErro(null);
@@ -21,7 +21,7 @@ export const usePacientes = () => {
     setCarregando(false);
   }, []);
 
-  // Função para buscar um único paciente (ex: para a Ficha do Paciente)
+  // Função para buscar um único paciente
   const carregarPacientePorId = useCallback(async (id) => {
     setCarregando(true);
     setErro(null);
@@ -51,7 +51,7 @@ export const usePacientes = () => {
     }
     
     setCarregando(false);
-    return resultado; // Retorna para o componente saber se fecha o modal/limpa form
+    return resultado; 
   };
 
   // Função para excluir

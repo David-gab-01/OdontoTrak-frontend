@@ -17,16 +17,12 @@ const Login = () => {
     e.preventDefault();
     setCarregando(true);
 
-    // Agora usamos o Service que criamos
     const resultado = await fazerLogin(email, senha, login);
 
     if (resultado.error) {
-      // Se houver erro, mostramos a mensagem que veio do Service
       alert(resultado.message);
       setCarregando(false);
     } else {
-      // Sucesso! O Contexto já salvou e decodificou o token.
-      // Agora podemos navegar para a Dashboard
       navigate("/");
     }
   };

@@ -2,7 +2,6 @@ import api from "../utils/api";
 
 /**
  * Service para gestão de Pacientes
- * Padronizamos o retorno como { error, data, message }
  */
 
 // 1. Listar todos os pacientes

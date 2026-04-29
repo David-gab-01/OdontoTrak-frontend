@@ -10,7 +10,7 @@ const NovoPaciente = () => {
   const navigate = useNavigate();
   const { salvarPaciente, carregando } = usePacientes();
 
-  // Estado inicial do formulário baseado nas rotas do Postman
+  // Estado inicial do formulário
   const [formData, setFormData] = useState({
     nome: "",
     cpf: "",
@@ -28,7 +28,6 @@ const NovoPaciente = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     
-    // Validação básica
     if (!formData.nome || !formData.cpf) {
       alert("Por favor, preencha os campos obrigatórios (*)");
       return;
@@ -38,9 +37,9 @@ const NovoPaciente = () => {
 
     if (!resultado.error) {
       alert("Paciente cadastrado com sucesso!");
-      navigate("/pacientes"); // Volta para a listagem
+      navigate("/pacientes"); 
     } else {
-      alert(resultado.message); // Exibe o erro vindo do Java
+      alert(resultado.message);
     }
   };
 

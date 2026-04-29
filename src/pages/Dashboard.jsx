@@ -9,7 +9,6 @@ import ListItem from "../components/ListItem";
 import WelcomeHeader from "../components/WelcomeHeader";
 
 const Dashboard = () => {
-  // Simulação da API: agora sem nenhuma informação de cor/classe
   const atendimentosHoje = [
     { id: 1, nome: "João Silva", status: "AGUARDANDO" },
     { id: 2, nome: "Maria Santos", status: "EM_ATENDIMENTO" },
@@ -64,9 +63,7 @@ const Dashboard = () => {
           <ListItem 
             key={atendimento.id}
             title={atendimento.nome}
-            // Passamos o status formatado para leitura humana se necessário
             badgeText={atendimento.status.replace("_", " ")}
-            // A mágica acontece aqui: pegamos a cor dinamicamente
             badgeColor={getStatusColor(atendimento.status)}
             actionLabel={atendimento.status === "FINALIZADO" ? "Ver Resumo" : "Atender"}
             onAction={() => console.log("Ação para o id:", atendimento.id)}

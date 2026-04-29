@@ -11,15 +11,13 @@ const Pacientes = () => {
   const navigate = useNavigate();
   const [busca, setBusca] = useState("");
   
-  // Extraindo lógica do nosso hook
+  // Extraindo lógica do hook
   const { pacientes, carregando, carregarPacientes, excluirPaciente } = usePacientes();
 
-  // Busca inicial de dados
   useEffect(() => {
     carregarPacientes();
   }, [carregarPacientes]);
 
-  // Filtro aplicado sobre os dados que vieram da API
   const pacientesFiltrados = pacientes.filter(
     (p) =>
       p.nome.toLowerCase().includes(busca.toLowerCase()) ||
