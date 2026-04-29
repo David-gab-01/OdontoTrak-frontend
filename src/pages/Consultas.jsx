@@ -6,7 +6,7 @@ import ListItem from "../components/ListItem";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import BackButton from "../components/BackButton";
-import { useAgendamentos } from "../hooks/useAgendamentos"; // Nosso Hook
+import { useAgendamentos } from "../hooks/useAgendamentos"; 
 
 const Consultas = () => {
   const navigate = useNavigate();

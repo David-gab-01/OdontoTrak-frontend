@@ -23,7 +23,6 @@ const NovoProfissional = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validação simples
     if (!formData.nome || !formData.email || !formData.senha) {
       alert("Nome, E-mail e Senha são obrigatórios.");
       return;
@@ -39,7 +38,6 @@ const NovoProfissional = () => {
     }
   };
 
-  // Helper para atualizar o objeto de estado
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };

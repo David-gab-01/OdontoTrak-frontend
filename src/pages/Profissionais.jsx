@@ -5,7 +5,7 @@ import ListContainer from "../components/ListContainer";
 import ListItem from "../components/ListItem";
 import Button from "../components/Button";
 import Input from "../components/Input";
-import { useProfissionais } from "../hooks/useProfissionais"; // Import Hook
+import { useProfissionais } from "../hooks/useProfissionais";
 
 const Profissionais = () => {
   const navigate = useNavigate();

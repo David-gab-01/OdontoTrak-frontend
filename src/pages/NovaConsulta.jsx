@@ -26,7 +26,6 @@ const NovaConsulta = () => {
     statusConsulta: "AGENDADO"
   });
 
-  // Busca as listas necessárias ao montar a tela
   useEffect(() => {
     carregarPacientes();
     carregarProfissionais();

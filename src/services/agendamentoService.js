@@ -2,7 +2,6 @@ import api from "../utils/api";
 
 /**
  * Service para gestão de Agendamentos (Agenda)
- * Baseado rigorosamente na coleção Postman
  */
 
 // 1. Listar todos os agendamentos (Geralmente usado na visão de Agenda)
@@ -42,7 +41,6 @@ export const criarAgendamento = async (dados) => {
 // 4. Atualizar Agendamento (Mudar horário ou Status)
 export const atualizarAgendamento = async (dados) => {
   try {
-    // Note: No Postman o PUT geralmente envia o objeto completo incluindo o ID
     const response = await api.put('/agendamentos', dados);
     return { error: false, data: response.data };
   } catch (error) {
