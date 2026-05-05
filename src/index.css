@@ -30,3 +30,61 @@ body {
   color: var(--color-dentista-body);
   font-family: sans-serif; /* Ou a fonte que você preferir */
 }
+
+
+/* 1. Remove bordas pesadas e deixa o fundo suave */
+.agenda-container .fc {
+  --fc-border-color: #f3f4f6;
+  --fc-page-bg-color: #ffffff;
+  font-family: inherit;
+}
+
+/* 2. Estilo do Cabeçalho dos Dias (Dom, Seg, Ter...) */
+.agenda-container .fc-col-header-cell {
+  background-color: transparent;
+  border: none !important;
+  padding: 15px 0 !important;
+}
+
+.agenda-container .fc-col-header-cell-cushion {
+  color: #1f2937; /* dentista-title */
+  text-transform: capitalize;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* 3. Estilo dos Cards de Eventos (Consultas) */
+.agenda-container .fc-v-event {
+  border-radius: 12px !important; /* Arredondado igual à imagem */
+  border: none !important;
+  padding: 4px 8px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-left: 2px !important;
+  margin-right: 2px !important;
+}
+
+/* 4. Linhas de Horário Suaves */
+.agenda-container .fc-timegrid-slot {
+  height: 4rem !important; /* Aumenta o espaço entre as horas */
+  border-bottom: 1px solid #f9fafb !important;
+}
+
+.agenda-container .fc-timegrid-slot-label {
+  border: none !important;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* 5. Destaque do Dia Atual (Azul na imagem) */
+.agenda-container .fc-day-today {
+  background-color: #f8faff !important; /* Fundo levemente azulado */
+}
+
+.agenda-container .fc-day-today .fc-col-header-cell-cushion {
+  color: #3b82f6 !important; /* Texto azul para o dia atual */
+}
+
+/* 6. Remove o botão de 'mais' e scrollbars feias */
+.agenda-container .fc-scroller {
+  overflow: hidden !important;
+}
