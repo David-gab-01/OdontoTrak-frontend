@@ -5,6 +5,7 @@ const SearchInput = ({
   placeholder = "Buscar...", 
   buttonText = "Search", 
   showButton = true, 
+  onButtonClick,
   className = "",
   fullWidth = false,
   ...props 
@@ -20,7 +21,6 @@ const SearchInput = ({
                      focus:outline-none focus:border-dentista-primary transition-colors shadow-sm"
           {...props}
         />
-        {/* Ícone de lupa fixo dentro do input */}
         <Search 
           size={18} 
           className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" 
@@ -29,6 +29,8 @@ const SearchInput = ({
 
       {showButton && (
         <button
+          type="button"
+          onClick={onButtonClick}
           className="px-6 py-4 rounded-xl bg-dentista-primary text-white text-sm font-medium
                      hover:bg-blue-700 transition-colors shadow-md shadow-blue-100"
         >

@@ -10,7 +10,7 @@ import { usePacientes } from "../hooks/usePacientes";
 const Pacientes = () => {
   const navigate = useNavigate();
   const [busca, setBusca] = useState("");
-  
+
   // Extraindo lógica do hook
   const { pacientes, carregando, carregarPacientes, excluirPaciente } = usePacientes();
 
@@ -18,11 +18,26 @@ const Pacientes = () => {
     carregarPacientes();
   }, [carregarPacientes]);
 
-  const pacientesFiltrados = pacientes.filter(
-    (p) =>
-      p.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      p.cpf.includes(busca)
-  );
+  const normalizarTexto = (texto = "") => String(texto).toLowerCase().trim();
+  const normalizarCpf = (valor = "") => String(valor).replace(/\D/g, "");
+  const termoBusca = normalizarTexto(busca);
+  const termoCpf = normalizarCpf(busca);
+  const buscaNumerica = /\d/.test(busca);
+
+  const pacientesFiltrados = pacientes.filter((p) => {
+    if (!termoBusca && !termoCpf) {
+      return true;
+    }
+
+    const nome = normalizarTexto(p.nome || p.name || p.nomeCompleto || '');
+    const cpf = normalizarCpf(p.cpf || '');
+    const email = normalizarTexto(p.email || p.emailPaciente || '');
+    const telefone = normalizarTexto(p.telefone || p.telefonePaciente || '');
+    const buscaCpfValida = buscaNumerica && termoCpf.length > 0 && cpf.includes(termoCpf);
+    const buscaTextoValida = termoBusca.length > 0 && (nome.includes(termoBusca) || email.includes(termoBusca) || telefone.includes(termoBusca));
+
+    return buscaTextoValida || buscaCpfValida;
+  });
 
   return (
     <div className="max-w-6xl mx-auto pb-10 px-4">
@@ -49,12 +64,17 @@ const Pacientes = () => {
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex gap-4 items-end">
         <Input
           label="Pesquisar"
-          placeholder="Digite o nome ou CPF..."
+          placeholder="Digite o nome, CPF, email ou telefone..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           className="flex-1"
         />
-        <Button variant="secondary" icon={Search}>
+        <Button
+          type="button"
+          variant="secondary"
+          icon={Search}
+          onClick={() => setBusca(busca.trim())}
+        >
           Buscar
         </Button>
       </div>
