@@ -1,7 +1,8 @@
 import React from 'react';
 import { useAuth } from "../contexts/AuthContext"; 
-import { LogOut, User, Mail, Shield } from "lucide-react"; 
+import { LogOut, Mail, Shield } from "lucide-react"; 
 import Button from "../components/Button";
+import ProfileHeader from "../components/ProfileHeader";
 
 const PerfilProfissional = () => {
   const { logout, user } = useAuth();
@@ -19,44 +20,25 @@ const PerfilProfissional = () => {
         <p className="text-dentista-body opacity-70">Gerencie suas informações e sessão.</p>
       </header>
 
-      <div className="bg-white rounded-clinica shadow-sm border border-gray-100 overflow-hidden">
-        {/* Cabeçalho do Card */}
-        <div className="bg-dentista-primary/5 p-6 border-b border-gray-100 flex items-center gap-4">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-dentista-primary shadow-sm">
-            <User size={32} />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-dentista-title">
-              {user?.sub?.split('@')[0].toUpperCase()}
-            </h2>
-
-          </div>
-        </div>
-
-        {/* Detalhes */}
-        <div className="p-6 space-y-4">
-          <div className="flex items-center gap-3 text-dentista-body">
-            <Mail size={18} className="opacity-50" />
-            <span><span className="font-semibold">E-mail:</span> {user?.sub}</span>
-          </div>
-          <div className="flex items-center gap-3 text-dentista-body">
-            <Shield size={18} className="opacity-50" />
-            <span><span className="font-semibold">Nível de Acesso:</span> Administrador</span>
-          </div>
-        </div>
-
-        {/* Rodapé do Card */}
-        <div className="p-6 bg-gray-50 border-t border-gray-100">
-          <Button 
+      <ProfileHeader
+        title={user?.sub?.split('@')[0].toUpperCase()}
+        subtitle="Meu Perfil"
+        avatarText={user?.sub?.charAt(0).toUpperCase() || 'P'}
+        fields={[
+          { label: 'E-mail', value: user?.sub },
+          { label: 'Nível de acesso', value: 'Administrador' },
+        ]}
+        actions={
+          <Button
             onClick={handleLogout}
-            variant="danger" // Assumindo que seu componente Button tenha essa variante, ou use a que preferir
+            variant="danger"
             className="w-full md:w-auto"
             icon={LogOut}
           >
             Encerrar Sessão
           </Button>
-        </div>
-      </div>
+        }
+      />
     </div>
   );
 };
