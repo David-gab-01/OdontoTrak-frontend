@@ -1,12 +1,22 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import AcessoNegado from '../../pages/AcessoNegado'; 
 
-const PrivateRoute = () => {
-  const { authenticated, loading } = useAuth();
+const PrivateRoute = ({ allowedRoles }) => {
+  const { authenticated, loading, user } = useAuth();
 
-  if (loading) return <div>Carregando...</div>;
+  if (loading) return null;
 
-  return authenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  if (!authenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Se tentar acessar via URL 
+  if (allowedRoles && !allowedRoles.some(role => user?.perfis?.includes(role))) {
+    return <AcessoNegado />;
+  }
+
+  return <Outlet />;
 };
 
 export default PrivateRoute;

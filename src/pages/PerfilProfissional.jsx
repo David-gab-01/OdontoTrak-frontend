@@ -56,6 +56,9 @@ const PerfilProfissional = () => {
     );
   }, [agendamentos, id]);
 
+  console.log('Consultas do profissional:', consultasProfissional);
+  console.log('Profissional selecionado:', profissionalSelecionado);
+
   const totalConsultas = consultasProfissional.length;
 
   const consultasConcluidas = consultasProfissional.filter((item) =>
@@ -150,20 +153,6 @@ const PerfilProfissional = () => {
           <h1 className="text-4xl font-bold text-dentista-title">
             Perfil Profissional
           </h1>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="outline"
-            icon={Download}
-            onClick={() => window.alert('Download PDF ainda não implementado')}
-          >
-            Baixar PDF
-          </Button>
-
-          <Button variant="outline" icon={Printer} onClick={() => window.print()}>
-            Imprimir
-          </Button>
         </div>
       </div>
 
