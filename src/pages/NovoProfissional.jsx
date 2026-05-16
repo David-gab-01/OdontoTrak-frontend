@@ -28,7 +28,13 @@ const NovoProfissional = () => {
       return;
     }
 
-    const resultado = await salvarProfissional(formData);
+    // Se não for denstista, envia uma string "N/A para o campo registroProfissional"
+    const dadosParaEnviar = { ...formData };
+    if (formData.perfis[0] !== "ROLE_DENTISTA") {
+      dadosParaEnviar.registroProfissional = "N/A";
+    }
+
+    const resultado = await salvarProfissional(dadosParaEnviar);
 
     if (!resultado.error) {
       alert("Profissional cadastrado com sucesso!");
@@ -42,6 +48,8 @@ const NovoProfissional = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const isDentista = formData.perfis[0] === "ROLE_DENTISTA";
+
   return (
     <div className="max-w-4xl mx-auto pb-10 px-4">
       <BackButton />
@@ -50,6 +58,21 @@ const NovoProfissional = () => {
 
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-clinica shadow-sm border border-gray-100">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* 1. Perfil de Acesso movido para o topo */}
+          <div className="flex flex-col gap-2 md:col-span-2">
+            <label className="text-sm font-bold text-dentista-title opacity-70">Perfil de Acesso *</label>
+            <select 
+              className="px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-dentista-primary text-sm bg-gray-50 font-medium"
+              value={formData.perfis[0]}
+              onChange={(e) => handleChange("perfis", [e.target.value])}
+            >
+              <option value="ROLE_DENTISTA">Dentista</option>
+              <option value="ROLE_ADMIN">Administrador</option>
+              <option value="ROLE_RECEPCIONISTA">Recepção</option>
+            </select>
+          </div>
+
           <Input 
             label="Nome Completo *" 
             placeholder="Ex: Dr. João Silva"
@@ -79,37 +102,29 @@ const NovoProfissional = () => {
 
           <Input 
             label="CPF" 
-            placeholder="00000000000"
+            placeholder="000.000.000-00"
             value={formData.cpf}
             onChange={(e) => handleChange("cpf", e.target.value)}
           />
 
           <Input 
             label="Telefone" 
-            placeholder="99999999999"
+            placeholder="(00) 00000-0000"
             value={formData.telefone}
             onChange={(e) => handleChange("telefone", e.target.value)}
           />
 
-          <Input 
-            label="Registro Profissional (CRO)" 
-            placeholder="Ex: CRO123"
-            value={formData.registroProfissional}
-            onChange={(e) => handleChange("registroProfissional", e.target.value)}
-          />
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-bold text-dentista-title opacity-70">Perfil de Acesso</label>
-            <select 
-              className="px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-dentista-primary text-sm bg-white"
-              value={formData.perfis[0]}
-              onChange={(e) => handleChange("perfis", [e.target.value])}
-            >
-              <option value="ROLE_DENTISTA">Dentista</option>
-              <option value="ROLE_ADMIN">Administrador</option>
-              <option value="ROLE_RECEPCAO">Recepção</option>
-            </select>
-          </div>
+          {/* 2. Condição para mostrar o Registro Profissional */}
+          {isDentista && (
+            <Input 
+              label="Registro Profissional (CRO) *" 
+              placeholder="Ex: CRO-SP 12345"
+              value={formData.registroProfissional}
+              onChange={(e) => handleChange("registroProfissional", e.target.value)}
+              required={isDentista}
+              className="md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300"
+            />
+          )}
         </div>
 
         <div className="mt-10 pt-6 border-t border-gray-100 flex justify-end gap-4">
