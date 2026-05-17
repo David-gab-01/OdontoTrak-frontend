@@ -1,5 +1,5 @@
 export const formatarCPF = (cpf = '') => {
-  const apenasNumeros = cpf.replace(/\D/g, '');
+  const apenasNumeros = cpf.replace(/\D/g, '').slice(0, 11);
 
   return apenasNumeros
     .replace(/(\d{3})(\d)/, '$1.$2')
@@ -8,7 +8,7 @@ export const formatarCPF = (cpf = '') => {
 };
 
 export const formatarTelefone = (telefone = '') => {
-  const apenasNumeros = telefone.replace(/\D/g, '');
+  const apenasNumeros = telefone.replace(/\D/g, '').slice(0, 11);
 
   if (apenasNumeros.length <= 10) {
     return apenasNumeros.replace(
@@ -54,9 +54,21 @@ export const formatarStatus = (status = '') => {
 
 export const pegarIniciais = (nome = '') => {
   return nome
+    .trim()
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
     .map((parte) => parte.charAt(0).toUpperCase())
     .join('');
+};
+
+export const apenasNumeros = (valor = '') => {
+  return valor.replace(/\D/g, '');
+};
+
+export const formatarNome = (nome = '') => {
+  return nome
+    .replace(/[0-9]/g, '')
+    .replace(/\s+/g, ' ')
+    .trimStart();
 };

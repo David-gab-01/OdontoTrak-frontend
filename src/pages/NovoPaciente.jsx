@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Contact, Save } from "lucide-react";
+
 import Input from "../components/Input";
 import Button from "../components/Button";
 import BackButton from "../components/BackButton";
+import Modal from "../components/Modal";
+
 import { usePacientes } from "../hooks/usePacientes";
 
 import {
@@ -28,8 +31,24 @@ const NovoPaciente = () => {
     dataNascimento: "",
     telefone: "",
     email: "",
-    endereco: ""
+    endereco: "",
   });
+
+  const [erros, setErros] = useState({});
+
+  const [modal, setModal] = useState({
+    open: false,
+    type: "",
+    message: "",
+  });
+
+  const fecharModal = () => {
+    setModal({
+      open: false,
+      type: "",
+      message: "",
+    });
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,34 +63,69 @@ const NovoPaciente = () => {
       novoValor = formatarTelefone(value);
     }
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: novoValor
+      [name]: novoValor,
     }));
+
+    if (erros[name]) {
+      setErros((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const validarFormulario = () => {
+    const novosErros = {};
+
+    if (!formData.nome.trim()) {
+      novosErros.nome = "Nome obrigatório";
+    }
+
+    if (!validarCPF(formData.cpf)) {
+      novosErros.cpf = "CPF inválido";
+    }
+
+    if (!formData.dataNascimento) {
+      novosErros.dataNascimento = "Data obrigatória";
+    }
+
+    if (!validarTelefone(formData.telefone)) {
+      novosErros.telefone = "Telefone inválido";
+    }
+
+    if (!validarEmail(formData.email)) {
+      novosErros.email = "E-mail inválido";
+    }
+
+    if (!formData.endereco.trim()) {
+      novosErros.endereco = "Endereço obrigatório";
+    }
+
+    setErros(novosErros);
+
+    return Object.keys(novosErros).length === 0;
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
 
-    if (!formData.nome || !formData.cpf || !formData.telefone || !formData.email) {
-      alert("Por favor, preencha os campos obrigatórios (*)");
+    if (!validarFormulario()) {
+      setModal({
+        open: true,
+        type: "error",
+        message: "Preencha os campos corretamente.",
+      });
+
       return;
     }
 
-    if (!validarCPF(formData.cpf)) {
-      alert("CPF inválido.");
-      return;
-    }
-
-    if (!validarTelefone(formData.telefone)) {
-      alert("Telefone inválido.");
-      return;
-    }
-
-    if (!validarEmail(formData.email)) {
-      alert("E-mail inválido.");
-      return;
-    }
+    setModal({
+      open: true,
+      type: "loading",
+      message: "Salvando paciente...",
+    });
 
     const dadosParaEnviar = {
       ...formData,
@@ -80,14 +134,26 @@ const NovoPaciente = () => {
     };
 
     const resultado = await salvarPaciente(dadosParaEnviar);
-    
 
     if (!resultado.error) {
-      alert("Paciente cadastrado com sucesso!");
-      navigate("/pacientes");
-    } else {
-      alert(resultado.message);
+      setModal({
+        open: true,
+        type: "success",
+        message: "Paciente cadastrado com sucesso!",
+      });
+
+      setTimeout(() => {
+        navigate("/pacientes");
+      }, 1500);
+
+      return;
     }
+
+    setModal({
+      open: true,
+      type: "error",
+      message: resultado.message || "Erro ao cadastrar paciente.",
+    });
   };
 
   return (
@@ -98,6 +164,7 @@ const NovoPaciente = () => {
         <h1 className="text-3xl font-bold text-dentista-title">
           Cadastrar Novo Paciente
         </h1>
+
         <p className="text-dentista-body opacity-70">
           Preencha os campos obrigatórios para o registro no sistema.
         </p>
@@ -120,7 +187,7 @@ const NovoPaciente = () => {
               onChange={handleChange}
               placeholder="Digite o nome do paciente"
               className="md:col-span-2"
-              required
+              error={erros.nome}
             />
 
             <Input
@@ -130,7 +197,7 @@ const NovoPaciente = () => {
               onChange={handleChange}
               placeholder="000.000.000-00"
               maxLength={14}
-              required
+              error={erros.cpf}
             />
 
             <Input
@@ -139,7 +206,7 @@ const NovoPaciente = () => {
               value={formData.dataNascimento}
               onChange={handleChange}
               type="date"
-              required
+              error={erros.dataNascimento}
             />
           </div>
         </div>
@@ -160,7 +227,7 @@ const NovoPaciente = () => {
               onChange={handleChange}
               placeholder="(00) 00000-0000"
               maxLength={15}
-              required
+              error={erros.telefone}
             />
 
             <Input
@@ -170,7 +237,7 @@ const NovoPaciente = () => {
               onChange={handleChange}
               type="email"
               placeholder="paciente@email.com"
-              required
+              error={erros.email}
             />
 
             <Input
@@ -182,7 +249,7 @@ const NovoPaciente = () => {
               className="md:col-span-2"
               isTextArea
               rows={2}
-              required
+              error={erros.endereco}
             />
           </div>
         </div>
@@ -202,6 +269,14 @@ const NovoPaciente = () => {
           </Button>
         </div>
       </form>
+
+      {modal.open && (
+        <Modal
+  type={modal.type}
+  message={modal.message}
+  onClose={fecharModal}
+/>
+      )}
     </div>
   );
 };
