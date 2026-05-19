@@ -66,8 +66,8 @@ const Profissionais = () => {
               description={p.email}
               badgeText={p.registroProfissional || "N/A"}
               badgeColor="text-gray-500 bg-gray-50 border-gray-100"
-              actionLabel="Gerenciar"
-              onAction={() => navigate(`/perfil-profissional/${p.id}`)}
+              actionLabel="Ver Perfil"
+              onAction={() => navigate(`/profissionais/${p.id}`)}
             />
           ))
         )}
