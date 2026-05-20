@@ -32,6 +32,15 @@ const converterEstadoParaItens = (estadoDentes) => {
   }));
 };
 
+const isErroNaoEncontrado = (resultado) => {
+  return (
+    resultado.status === 400 ||
+    resultado.status === 404 ||
+    resultado.message?.toLowerCase().includes("não encontrado") ||
+    resultado.message?.toLowerCase().includes("nao encontrado")
+  );
+};
+
 export const useOdontograma = () => {
   const [odontogramaAtual, setOdontogramaAtual] = useState(null);
   const [dentes, setDentes] = useState(criarEstadoInicialDentes());
@@ -47,9 +56,15 @@ export const useOdontograma = () => {
     const resultado = await odontogramaService.listarPorPaciente(pacienteId);
 
     if (resultado.error) {
-      setErro(resultado.message);
       setOdontogramaAtual(null);
       setDentes(criarEstadoInicialDentes());
+
+      if (isErroNaoEncontrado(resultado)) {
+        setErro(null);
+      } else {
+        setErro(resultado.message);
+      }
+
       setCarregando(false);
       return;
     }
@@ -58,7 +73,10 @@ export const useOdontograma = () => {
     const ultimo = lista.length > 0 ? lista[lista.length - 1] : null;
 
     setOdontogramaAtual(ultimo);
-    setDentes(ultimo ? converterItensParaEstado(ultimo.itens) : criarEstadoInicialDentes());
+    setDentes(
+      ultimo ? converterItensParaEstado(ultimo.itens) : criarEstadoInicialDentes()
+    );
+
     setCarregando(false);
   }, []);
 
@@ -71,15 +89,22 @@ export const useOdontograma = () => {
     const resultado = await odontogramaService.buscarPorAgendamento(agendamentoId);
 
     if (resultado.error) {
-      setErro(resultado.message);
       setOdontogramaAtual(null);
       setDentes(criarEstadoInicialDentes());
+
+      if (isErroNaoEncontrado(resultado)) {
+        setErro(null);
+      } else {
+        setErro(resultado.message);
+      }
+
       setCarregando(false);
       return;
     }
 
     setOdontogramaAtual(resultado.data);
     setDentes(converterItensParaEstado(resultado.data?.itens));
+
     setCarregando(false);
   }, []);
 
