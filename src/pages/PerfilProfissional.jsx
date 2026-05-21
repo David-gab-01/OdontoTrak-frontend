@@ -6,8 +6,6 @@ import {
   Phone,
   CircleDot,
   AlertCircle,
-  Download,
-  Printer,
 } from 'lucide-react';
 
 import { useProfissionais } from '../hooks/useProfissionais';
@@ -37,27 +35,21 @@ const PerfilProfissional = () => {
     carregarProfissionalPorId,
   } = useProfissionais();
 
+  // Custom hook de agendamentos consumindo a rota otimizada por Profissional
   const {
     agendamentos,
     carregando: carregandoAgendamentos,
-    carregarAgendamentos,
+    carregarAgendamentosPorProfissional,
   } = useAgendamentos();
 
   useEffect(() => {
     if (id) {
       carregarProfissionalPorId(id);
-      carregarAgendamentos();
+      carregarAgendamentosPorProfissional(id); // Carrega estritamente as consultas deste profissional
     }
-  }, [id, carregarProfissionalPorId, carregarAgendamentos]);
+  }, [id, carregarProfissionalPorId, carregarAgendamentosPorProfissional]);
 
-  const consultasProfissional = useMemo(() => {
-    return agendamentos.filter(
-      (consulta) => String(consulta.profissionalId) === String(id)
-    );
-  }, [agendamentos, id]);
-
-  console.log('Consultas do profissional:', consultasProfissional);
-  console.log('Profissional selecionado:', profissionalSelecionado);
+  const consultasProfissional = useMemo(() => agendamentos, [agendamentos]);
 
   const totalConsultas = consultasProfissional.length;
 
@@ -163,10 +155,7 @@ const PerfilProfissional = () => {
         fields={[
           {
             label: 'Idade',
-            value:
-              idadeProfissional !== null
-                ? `${idadeProfissional} anos`
-                : 'Não informado',
+            value: idadeProfissional !== null ? `${idadeProfissional} anos` : 'Não informado',
           },
           {
             label: 'Status',
@@ -256,8 +245,7 @@ const PerfilProfissional = () => {
                         <td className="px-4 py-4 align-top">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-dentista-primary">
-                              {consulta.nomePaciente?.charAt(0).toUpperCase() ||
-                                'P'}
+                              {consulta.nomePaciente?.charAt(0).toUpperCase() || 'P'}
                             </div>
 
                             <div>
@@ -265,8 +253,7 @@ const PerfilProfissional = () => {
                                 {consulta.nomePaciente || 'Paciente não informado'}
                               </p>
                               <p className="text-sm text-gray-500">
-                                {consulta.pacienteTelefone ||
-                                  'Telefone não informado'}
+                                {consulta.pacienteTelefone || 'Telefone não informado'}
                               </p>
                             </div>
                           </div>
@@ -277,15 +264,12 @@ const PerfilProfissional = () => {
                         </td>
 
                         <td className="px-4 py-4 align-top text-gray-600 text-sm">
-                          {consulta.nomeProfissional ||
-                            profissionalSelecionado.nome}
+                          {consulta.nomeProfissional || profissionalSelecionado.nome}
                         </td>
 
                         <td className="px-4 py-4 align-top text-sm">
                           <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                            {consulta.etapa ||
-                              consulta.statusConsulta ||
-                              'Agendado'}
+                            {consulta.etapa || consulta.statusConsulta || 'Agendado'}
                           </span>
                         </td>
 
@@ -295,17 +279,16 @@ const PerfilProfissional = () => {
                               consulta.statusConsulta
                             )}`}
                           >
-                            {consulta.statusConsulta?.replace('_', ' ') ||
-                              'Pendente'}
+                            {consulta.statusConsulta?.replace('_', ' ') || 'Pendente'}
                           </span>
                         </td>
 
                         <td className="px-4 py-4 align-top text-sm">
                           <Button
                             variant="outline"
-                            onClick={() => navigate('/consultas')}
+                            onClick={() => navigate(`/ficha-consulta/${consulta.id}`)}
                           >
-                            Ver Agenda
+                            Ver Consulta
                           </Button>
                         </td>
                       </tr>
@@ -337,8 +320,7 @@ const PerfilProfissional = () => {
 
                 <p>
                   <span className="font-semibold">Registro Profissional:</span>{' '}
-                  {profissionalSelecionado.registroProfissional ||
-                    'Não informado'}
+                  {profissionalSelecionado.registroProfissional || 'Não informado'}
                 </p>
 
                 <p>
@@ -363,16 +345,6 @@ const PerfilProfissional = () => {
             </SectionCard>
           </div>
         )}
-      </div>
-
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Button variant="primary" onClick={() => window.location.reload()}>
-          Atualizar Tela
-        </Button>
-
-        <Button variant="outline" onClick={() => navigate('/profissionais')}>
-          Voltar para Profissionais
-        </Button>
       </div>
     </div>
   );

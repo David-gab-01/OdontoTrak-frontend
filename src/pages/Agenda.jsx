@@ -1,13 +1,16 @@
-import React, { useRef, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // Importação necessária para navegação
+import React, { useRef, useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 
-// Seus componentes e hooks
+// Contexto e Hooks
+import { useAuth } from "../contexts/AuthContext";
 import { useAgendamentos } from "../hooks/useAgendamentos";
+
+// Componentes e UI
 import Button from "../components/Button";
 import BackButton from "../components/BackButton";
 import { ChevronLeft, ChevronRight, CalendarPlus, RefreshCw, Clock } from "lucide-react";
@@ -16,21 +19,49 @@ const Agenda = () => {
   const navigate = useNavigate(); 
   const calendarRef = useRef(null);
   const [titulo, setTitulo] = useState("");
-  const { agendamentos, carregando, carregarAgendamentos } = useAgendamentos();
+  
+  // 1. Pega os dados do usuário autenticado
+  const { user } = useAuth();
+  
+  // 2. Extrai os estados e as duas funções de carga do hook estruturado
+  const { 
+    agendamentos, 
+    todosAgendamentos, 
+    carregando, 
+    carregarTodosAgendamentos, 
+    carregarMeusAgendamentos 
+  } = useAgendamentos();
+
+  // 3. Define se o usuário logado é exclusivamente um Dentista
+  const ehDentista = useMemo(() => {
+    return user?.perfis?.[0] === 'ROLE_DENTISTA';
+  }, [user]);
+
+  // 4. Função de carga inteligente baseada na Role
+  const atualizarDadosAgenda = React.useCallback(() => {
+    if (ehDentista) {
+      carregarMeusAgendamentos(); // GET /agendamentos/meus
+    } else {
+      carregarTodosAgendamentos(); // GET /agendamentos
+    }
+  }, [ehDentista, carregarTodosAgendamentos, carregarMeusAgendamentos]);
 
   useEffect(() => {
-    carregarAgendamentos();
-    // Captura o título formatado (Ex: "Março de 2026")
+    atualizarDadosAgenda();
+    
     setTimeout(() => {
       if (calendarRef.current) {
         setTitulo(calendarRef.current.getApi().view.title);
       }
     }, 100);
-  }, [carregarAgendamentos]);
+  }, [atualizarDadosAgenda]);
 
-  const eventos = agendamentos.map((a) => ({
+  // 5. Seleciona a fonte de dados correta para renderizar no calendário
+  const listaParaExibir = ehDentista ? agendamentos : todosAgendamentos;
+
+  const eventos = listaParaExibir.map((a) => ({
     id: a.id,
-    title: a.nomePaciente,
+    title: a.nomePaciente || "Paciente não informado",
     start: a.dataInicio,
     end: a.dataFim,
     classNames: [`status-${a.statusConsulta?.toLowerCase()}`],
@@ -84,21 +115,28 @@ const Agenda = () => {
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-dentista-title capitalize">
-          {titulo}
-        </h2>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-dentista-title capitalize">
+            {titulo}
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {ehDentista ? "Visualizando suas consultas médicas" : "Visualizando agenda geral da clínica"}
+          </p>
+        </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" icon={RefreshCw} onClick={carregarAgendamentos} loading={carregando} />
+          <Button variant="ghost" icon={RefreshCw} onClick={atualizarDadosAgenda} loading={carregando} />
           
-          {/* Botão atualizado com navegação real */}
-          <Button 
-            variant="primary" 
-            icon={CalendarPlus} 
-            onClick={() => navigate("/nova-consulta")}
-          >
-            Novo Agendamento
-          </Button>
+          {/* BOTÃO ADAPTATIVO: Oculta a criação de consultas se for apenas Dentista */}
+          {!ehDentista && (
+            <Button 
+              variant="primary" 
+              icon={CalendarPlus} 
+              onClick={() => navigate("/nova-consulta")}
+            >
+              Novo Agendamento
+            </Button>
+          )}
         </div>
       </div>
 
@@ -117,6 +155,8 @@ const Agenda = () => {
           nowIndicator={true}
           slotEventOverlap={false}
           eventContent={renderEventCard}
+          // Redireciona o profissional ou admin ao clicar no card da consulta
+          eventClick={(info) => navigate(`/ficha-consulta/${info.event.id}`)}
           dayHeaderContent={(args) => (
             <div className="py-2">
               <div className="text-gray-400 text-[11px] uppercase font-semibold">
@@ -142,7 +182,7 @@ const Agenda = () => {
 
 function renderEventCard(eventInfo) {
   return (
-    <div className="flex flex-col h-full w-full justify-center">
+    <div className="flex flex-col h-full w-full justify-center p-1 cursor-pointer">
       <div className="flex items-center gap-1 mb-0.5">
         <Clock size={10} className="opacity-70" />
         <span className="text-[10px] font-bold">{eventInfo.timeText}</span>
@@ -150,9 +190,12 @@ function renderEventCard(eventInfo) {
       <div className="font-bold text-[11px] leading-tight truncate">
         {eventInfo.event.title}
       </div>
-      <div className="text-[9px] opacity-90 truncate font-medium">
-        {eventInfo.event.extendedProps.profissional}
-      </div>
+      {/* Remove redundância: Só mostra o nome do profissional se não estiver no painel exclusivo do dentista */}
+      {eventInfo.event.extendedProps.profissional && (
+        <div className="text-[9px] opacity-90 truncate font-medium text-blue-900/80">
+          {eventInfo.event.extendedProps.profissional}
+        </div>
+      )}
     </div>
   );
 }

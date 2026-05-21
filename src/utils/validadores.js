@@ -19,7 +19,6 @@ export const validarCPF = (cpf = '') => {
   }
 
   let digito1 = 11 - (soma % 11);
-
   if (digito1 >= 10) digito1 = 0;
 
   if (digito1 !== Number(numeros[9])) return false;
@@ -31,7 +30,6 @@ export const validarCPF = (cpf = '') => {
   }
 
   let digito2 = 11 - (soma % 11);
-
   if (digito2 >= 10) digito2 = 0;
 
   return digito2 === Number(numeros[10]);
@@ -39,7 +37,6 @@ export const validarCPF = (cpf = '') => {
 
 export const validarTelefone = (telefone = '') => {
   const numeros = apenasNumeros(telefone);
-
   return numeros.length === 10 || numeros.length === 11;
 };
 
@@ -57,4 +54,21 @@ export const validarCRO = (cro = '') => {
 
 export const validarSenha = (senha = '') => {
   return senha.length >= 6;
+};
+
+export const validarNome = (nome = '') => {
+  return String(nome).trim().length >= 3;
+};
+
+export const validarDataNascimento = (data = '') => {
+  if (!data) return false;
+
+  const dataInformada = new Date(data);
+  const hoje = new Date();
+
+  return dataInformada < hoje;
+};
+
+export const validarConfirmacaoSenha = (senha = '', confirmarSenha = '') => {
+  return senha === confirmarSenha;
 };

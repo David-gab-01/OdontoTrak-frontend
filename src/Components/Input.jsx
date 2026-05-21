@@ -8,16 +8,21 @@ const Input = ({
   isSelect = false,
   rows = 4,
   className = "",
+  error = "",
   children,
-  ...props 
+  ...props
 }) => {
-
-
   const fieldStyles = `
-    px-4 py-3 rounded-xl border border-gray-200 bg-white
+    px-4 py-3 rounded-xl border bg-white
     text-sm text-gray-700 placeholder-gray-400
-    focus:outline-none focus:border-dentista-primary focus:ring-1 focus:ring-dentista-primary/20
-    transition-all shadow-sm w-full disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
+    focus:outline-none focus:ring-1
+    transition-all shadow-sm w-full
+    disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
+    ${
+      error
+        ? "border-red-400 focus:border-red-500 focus:ring-red-500/20"
+        : "border-gray-200 focus:border-dentista-primary focus:ring-dentista-primary/20"
+    }
   `;
 
   return (
@@ -28,38 +33,32 @@ const Input = ({
         </label>
       )}
 
-      {/* Lógica de Renderização Condicional */}
-      {(() => {
+      {isSelect ? (
+        <select className={fieldStyles} {...props}>
+          {placeholder && <option value="">{placeholder}</option>}
+          {children}
+        </select>
+      ) : isTextArea ? (
+        <textarea
+          placeholder={placeholder}
+          rows={rows}
+          className={`${fieldStyles} resize-none`}
+          {...props}
+        />
+      ) : (
+        <input
+          type={type}
+          placeholder={placeholder}
+          className={fieldStyles}
+          {...props}
+        />
+      )}
 
-        if (isSelect) {
-          return (
-            <select className={fieldStyles} {...props}>
-              {placeholder && <option value="">{placeholder}</option>}
-              {children}
-            </select>
-          );
-        }
-
-        if (isTextArea) {
-          return (
-            <textarea
-              placeholder={placeholder}
-              rows={rows}
-              className={`${fieldStyles} resize-none`}
-              {...props}
-            />
-          );
-        }
-
-        return (
-          <input
-            type={type}
-            placeholder={placeholder}
-            className={fieldStyles}
-            {...props}
-          />
-        );
-      })()}
+      {error && (
+        <span className="text-xs font-medium text-red-500 ml-1">
+          {error}
+        </span>
+      )}
     </div>
   );
 };

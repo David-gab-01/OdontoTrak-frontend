@@ -69,7 +69,7 @@ const AppRoutes = () => {
           <Route element={<PrivateRoute allowedRoles={['ROLE_ADMIN']} />}>
             <Route path="profissionais" element={<Profissionais />} />
             <Route path="novo-profissional" element={<NovoProfissional />} />
-            <Route path="perfil-profissional/:id" element={<PerfilProfissional />} />
+            <Route path="profissionais/:id" element={<PerfilProfissional />} />
             <Route path="relatorio-financas" element={<RelatorioFinancas />} />
             <Route path="relatorio-consultas" element={<RelatorioConsultas />} />
           </Route>
