@@ -59,7 +59,7 @@ export const useAgendamentos = () => {
     setCarregando(false);
   }, []);
 
-  // Lista as consultas exclusivas do Dentista logado (GET /agendamentos/meus)
+  // Lista as consultas exclusivas do Dentista logado 
   const carregarMeusAgendamentos = useCallback(async () => {
     setCarregando(true);
     setErro(null);
@@ -69,7 +69,7 @@ export const useAgendamentos = () => {
     setCarregando(false);
   }, []);
 
-  // Histórico de um Paciente Específico (Ideal para a Ficha do Paciente)
+  // Histórico de um Paciente Específico 
   const carregarAgendamentosPorPaciente = useCallback(async (pacienteId) => {
     if (!pacienteId) return;
     setCarregando(true);
@@ -81,7 +81,7 @@ export const useAgendamentos = () => {
     setCarregando(false);
   }, []);
 
-  // Agenda de um Dentista específico (Ideal para a Ficha do Profissional/Médico)
+  // Agenda de um Dentista específico 
   const carregarAgendamentosPorProfissional = useCallback(
     async (profissionalId) => {
       if (!profissionalId) return;
@@ -144,13 +144,13 @@ export const useAgendamentos = () => {
 
   return {
     agendamentos,
-    todosAgendamentos, // Disponibilizado para o Dashboard da Clínica mapear por data
+    todosAgendamentos, 
     agendamentoSelecionado,
     resumoDashboard,
     carregando,
     erro,
     carregarAgendamentos,
-    carregarTodosAgendamentos, // Vinculado à nova função
+    carregarTodosAgendamentos, 
     carregarResumoDashboard,
     carregarMeusAgendamentos,
     carregarAgendamentosPorPaciente,

@@ -15,10 +15,10 @@ export const listarAgendamentos = async () => {
   }
 };
 
-// [NOVO] 1.1 - Dashboard Estatístico do Dentista Logado
+// Dashboard Estatístico do Dentista Logado
 export const buscarResumoMeuDashboard = async () => {
   try {
-    const response = await api.get('/agendamentos/meus/resumo');
+    const response = await api.get('/meus/resumo');
     return { error: false, data: response.data };
   } catch (error) {
     const msg = error.response?.data?.message || "Erro ao carregar resumo estatístico.";
@@ -26,7 +26,7 @@ export const buscarResumoMeuDashboard = async () => {
   }
 };
 
-// [NOVO] 1.2 - Consultas do Dentista Logado ("Minhas Consultas")
+// Consultas do Dentista Logado ("Minhas Consultas")
 export const listarMeusAgendamentos = async () => {
   try {
     const response = await api.get('/agendamentos/meus');
@@ -37,7 +37,7 @@ export const listarMeusAgendamentos = async () => {
   }
 };
 
-// [NOVO] 1.3 - Histórico Completo de um Paciente Específico
+// Histórico Completo de um Paciente Específico
 export const listarAgendamentosPorPaciente = async (pacienteId) => {
   try {
     const response = await api.get(`/agendamentos/paciente/${pacienteId}`);
@@ -48,7 +48,7 @@ export const listarAgendamentosPorPaciente = async (pacienteId) => {
   }
 };
 
-// [NOVO] 1.4 - Ver Agenda de um Dentista Específico (Para Admin / Recepção)
+// Ver Agenda de um Dentista Específico (Para Admin / Recepção)
 export const listarAgendamentosPorProfissional = async (profissionalId) => {
   try {
     const response = await api.get(`/agendamentos/profissional/${profissionalId}`);

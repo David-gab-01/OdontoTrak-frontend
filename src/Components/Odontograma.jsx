@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { CheckCircle2, X } from "lucide-react";
 
 const DENTES_SUPERIORES = [
   "D18", "D17", "D16", "D15", "D14", "D13", "D12", "D11",
@@ -14,50 +15,48 @@ const STATUS_OPTIONS = [
   { value: "SAUDAVEL", label: "Saudável", color: "bg-emerald-500" },
   { value: "CARIADO", label: "Cariado", color: "bg-red-500" },
   { value: "RESTAURADO", label: "Restaurado", color: "bg-blue-500" },
-  { value: "AUSENTE", label: "Ausente", color: "bg-gray-400" },
+  { value: "AUSENTE", label: "Ausente", color: "bg-gray-300" },
   { value: "PROTETICO", label: "Protético", color: "bg-purple-500" },
-  { value: "IMPLANTE", label: "Implante", color: "bg-yellow-500" },
+  { value: "IMPLANTE", label: "Implante", color: "bg-amber-500" },
 ];
 
 const statusStyles = {
   SAUDAVEL: {
-    card: "border-emerald-500/40 bg-emerald-500/10",
-    tooth: "bg-emerald-500",
-    text: "text-emerald-400",
+    card: "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/60 text-emerald-700",
+    tooth: "bg-emerald-500 border-emerald-600",
+    text: "text-emerald-600",
   },
   CARIADO: {
-    card: "border-red-500/40 bg-red-500/10",
-    tooth: "bg-red-500",
-    text: "text-red-400",
+    card: "border-red-200 bg-red-50/30 hover:bg-red-50/60 text-red-700",
+    tooth: "bg-red-500 border-red-600",
+    text: "text-red-600",
   },
   RESTAURADO: {
-    card: "border-blue-500/40 bg-blue-500/10",
-    tooth: "bg-blue-500",
-    text: "text-blue-400",
+    card: "border-blue-200 bg-blue-50/30 hover:bg-blue-50/60 text-blue-700",
+    tooth: "bg-blue-500 border-blue-600",
+    text: "text-blue-600",
   },
   AUSENTE: {
-    card: "border-gray-500/40 bg-gray-500/10",
-    tooth: "bg-gray-400",
-    text: "text-gray-300",
+    card: "border-gray-200 bg-gray-50/50 text-gray-400 opacity-40",
+    tooth: "bg-gray-100 border-gray-200",
+    text: "text-gray-400",
   },
   PROTETICO: {
-    card: "border-purple-500/40 bg-purple-500/10",
-    tooth: "bg-purple-500",
-    text: "text-purple-400",
+    card: "border-purple-200 bg-purple-50/30 hover:bg-purple-50/60 text-purple-700",
+    tooth: "bg-purple-500 border-purple-600",
+    text: "text-purple-600",
   },
   IMPLANTE: {
-    card: "border-yellow-500/40 bg-yellow-500/10",
-    tooth: "bg-yellow-500",
-    text: "text-yellow-300",
+    card: "border-amber-200 bg-amber-50/30 hover:bg-amber-50/60 text-amber-700",
+    tooth: "bg-amber-500 border-amber-600",
+    text: "text-amber-600",
   },
 };
 
 const Odontograma = ({ dentes = {}, onChange, disabled = false }) => {
   const [denteSelecionado, setDenteSelecionado] = useState(null);
 
-  const fecharModal = () => {
-    setDenteSelecionado(null);
-  };
+  const fecharModal = () => setDenteSelecionado(null);
 
   const alterarStatus = (statusDente) => {
     if (!denteSelecionado || disabled) return;
@@ -86,42 +85,37 @@ const Odontograma = ({ dentes = {}, onChange, disabled = false }) => {
         disabled={disabled}
         onClick={() => abrirModal(dente)}
         className={`
-          group
-          rounded-2xl
+          flex flex-col items-center justify-between
+          rounded-xl
           border
-          p-2
+          p-1.5
+          min-w-[38px]
+          w-full
           text-center
-          shadow-sm
           transition-all
-          duration-200
-          hover:-translate-y-1
-          hover:shadow-lg
-          disabled:cursor-not-allowed
-          disabled:opacity-60
+          duration-150
+          ${!disabled ? "hover:scale-105 cursor-pointer" : "cursor-default"}
           ${style.card}
         `}
       >
-        <div className="mb-2 flex justify-center">
+        {/* Parte Anatômica */}
+        <div className="w-full flex justify-center mb-1">
           <div
             className={`
-              h-10
-              w-8
-              rounded-b-3xl
-              rounded-t-xl
+              h-5 w-4
+              rounded-b-lg
+              rounded-t-sm
+              border-b
               shadow-inner
               transition-all
-              duration-300
               ${style.tooth}
             `}
           />
         </div>
 
-        <p className={`text-xs font-bold ${style.text}`}>
+        {/* Número do dente */}
+        <p className={`text-[10px] font-bold ${style.text}`}>
           {dente.replace("D", "")}
-        </p>
-
-        <p className="mt-1 text-[10px] text-gray-400">
-          {STATUS_OPTIONS.find((item) => item.value === status)?.label}
         </p>
       </button>
     );
@@ -130,57 +124,84 @@ const Odontograma = ({ dentes = {}, onChange, disabled = false }) => {
   const statusAtual = dentes[denteSelecionado] || "SAUDAVEL";
 
   return (
-    <div className="rounded-clinica border border-gray-800 bg-[#050816] p-6 shadow-xl">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white">Odontograma</h2>
-        <p className="mt-1 text-sm text-gray-400">
-          Clique em um dente para alterar o status clínico.
+    <div className="w-full rounded-2xl border border-gray-100 bg-white p-5 shadow-xs">
+      <div className="mb-4">
+        <h2 className="text-lg font-bold text-slate-800">Mapeamento Odontograma</h2>
+        <p className="text-xs text-slate-500 mt-0.5">
+          {disabled 
+            ? "Visualização estática do prontuário do paciente." 
+            : "Selecione o dente para alterar o status em tempo real."}
         </p>
       </div>
 
-      <div className="rounded-3xl border border-gray-800 bg-[#0B1120] p-6">
-        <div className="mb-10">
-          <h3 className="mb-5 text-center text-sm font-semibold uppercase tracking-wide text-gray-300">
+      {/* Grade Geral das Arcadas */}
+      <div className="rounded-2xl border border-gray-100 bg-slate-50/40 p-4">
+        
+        {/* Arcada Superior */}
+        <div className="mb-4">
+          <h3 className="mb-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Arcada Superior
           </h3>
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-8 xl:grid-cols-16">
-            {DENTES_SUPERIORES.map(renderDente)}
-          </div>
+          
+          {!disabled ? (
+            /* TELA 1 (Edição): Ativa a rolagem horizontal caso falte espaço */
+            <div className="w-full overflow-x-auto pb-2 scrollbar-thin">
+              <div className="flex justify-between gap-1 min-w-[640px]">
+                {DENTES_SUPERIORES.map(renderDente)}
+              </div>
+            </div>
+          ) : (
+            /* TELA 2 (Consolidado): Empilha os dentes nativamente para caber no espaço */
+            <div className="grid grid-cols-4 sm:grid-cols-8 md:grid-cols-12 lg:grid-cols-16 gap-1.5 w-full">
+              {DENTES_SUPERIORES.map(renderDente)}
+            </div>
+          )}
         </div>
 
-        <div className="my-8 flex items-center gap-4">
-          <div className="h-px flex-1 bg-gray-700" />
-          <span className="rounded-full border border-gray-700 bg-[#111827] px-4 py-1 text-xs font-semibold text-gray-400">
-            Linha média
+        {/* Linha Oclusal */}
+        <div className="my-3 flex items-center gap-3">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="rounded-md border border-gray-200 bg-white px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 shadow-2xs">
+            Plano Oclusal Médio
           </span>
-          <div className="h-px flex-1 bg-gray-700" />
+          <div className="h-px flex-1 bg-gray-200" />
         </div>
 
+        {/* Arcada Inferior */}
         <div>
-          <h3 className="mb-5 text-center text-sm font-semibold uppercase tracking-wide text-gray-300">
+          <h3 className="mb-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Arcada Inferior
           </h3>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-8 xl:grid-cols-16">
-            {DENTES_INFERIORES.map(renderDente)}
-          </div>
+          {!disabled ? (
+            /* TELA 1 (Edição): Ativa a rolagem horizontal caso falte espaço */
+            <div className="w-full overflow-x-auto pb-2 scrollbar-thin">
+              <div className="flex justify-between gap-1 min-w-[640px]">
+                {DENTES_INFERIORES.map(renderDente)}
+              </div>
+            </div>
+          ) : (
+            /* TELA 2 (Consolidado): Empilha os dentes nativamente para caber no espaço */
+            <div className="grid grid-cols-4 sm:grid-cols-8 md:grid-cols-12 lg:grid-cols-16 gap-1.5 w-full">
+              {DENTES_INFERIORES.map(renderDente)}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-gray-800 bg-[#0B1120] p-5">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-white">
-          Legenda dos Status
+      {/* Legendas Livres e Visíveis */}
+      <div className="mt-4 pt-3 border-t border-gray-100">
+        <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          Legenda de Diagnósticos
         </h3>
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="flex flex-wrap gap-2">
           {STATUS_OPTIONS.map((status) => (
             <div
               key={status.value}
-              className="flex items-center gap-3 rounded-xl border border-gray-700 bg-[#111827] px-3 py-3"
+              className="flex items-center gap-2 rounded-lg border border-gray-100 bg-white px-2.5 py-1.5 text-xs shadow-2xs"
             >
-              <span className={`h-4 w-4 rounded-full ${status.color}`} />
-              <span className="text-sm font-medium text-gray-200">
+              <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${status.color}`} />
+              <span className="font-medium text-slate-600 whitespace-nowrap">
                 {status.label}
               </span>
             </div>
@@ -188,67 +209,50 @@ const Odontograma = ({ dentes = {}, onChange, disabled = false }) => {
         </div>
       </div>
 
+      {/* Modal de Alteração de Status */}
       {denteSelecionado && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-md rounded-3xl border border-gray-700 bg-[#0B1120] p-6 shadow-2xl">
-            <div className="mb-6 text-center">
-              <p className="text-sm text-gray-400">Alterar status do dente</p>
-              <h3 className="mt-1 text-3xl font-bold text-white">
-                {denteSelecionado.replace("D", "")}
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs px-4">
+          <div className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-5 shadow-xl">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+              <div>
+                <span className="text-[10px] font-bold tracking-wider text-blue-600 uppercase">Dente selecionado</span>
+                <h3 className="text-base font-bold text-slate-800">Condição do Dente {denteSelecionado.replace("D", "")}</h3>
+              </div>
+              <button 
+                onClick={fecharModal} 
+                className="p-1 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+              >
+                <X size={16} />
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-1">
               {STATUS_OPTIONS.map((status) => {
                 const selecionado = statusAtual === status.value;
-
                 return (
                   <button
                     key={status.value}
                     type="button"
                     onClick={() => alterarStatus(status.value)}
                     className={`
-                      flex
-                      items-center
-                      justify-between
-                      rounded-2xl
-                      border
-                      px-4
-                      py-3
-                      text-left
-                      transition
-                      hover:bg-gray-800
-                      ${
-                        selecionado
-                          ? "border-white bg-gray-800"
-                          : "border-gray-700 bg-[#111827]"
+                      w-full flex items-center justify-between
+                      rounded-xl border px-3 py-2 text-sm font-medium
+                      transition cursor-pointer text-left
+                      ${selecionado 
+                        ? "border-blue-500 bg-blue-50/40 text-blue-700 shadow-2xs" 
+                        : "border-gray-100 bg-slate-50/50 text-slate-700 hover:bg-slate-50 hover:border-gray-200"
                       }
                     `}
                   >
                     <div className="flex items-center gap-3">
-                      <span className={`h-4 w-4 rounded-full ${status.color}`} />
-                      <span className="font-semibold text-white">
-                        {status.label}
-                      </span>
+                      <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${status.color}`} />
+                      <span>{status.label}</span>
                     </div>
-
-                    {selecionado && (
-                      <span className="text-xs font-semibold text-emerald-400">
-                        Atual
-                      </span>
-                    )}
+                    {selecionado && <CheckCircle2 size={14} className="text-blue-600" />}
                   </button>
                 );
               })}
             </div>
-
-            <button
-              type="button"
-              onClick={fecharModal}
-              className="mt-5 w-full rounded-2xl border border-gray-700 bg-transparent px-4 py-3 text-sm font-semibold text-gray-300 transition hover:bg-gray-800"
-            >
-              Cancelar
-            </button>
           </div>
         </div>
       )}

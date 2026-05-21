@@ -1,51 +1,13 @@
-import { useCallback, useState } from "react";
-import * as fichaConsultaService from "../services/fichaConsultaService";
-import * as odontogramaService from "../services/odontogramaService";
-
-export const DENTES = [
-  "D11", "D12", "D13", "D14", "D15", "D16", "D17", "D18",
-  "D21", "D22", "D23", "D24", "D25", "D26", "D27", "D28",
-  "D31", "D32", "D33", "D34", "D35", "D36", "D37", "D38",
-  "D41", "D42", "D43", "D44", "D45", "D46", "D47", "D48",
-];
-
-export const criarDentesIniciais = () =>
-  DENTES.reduce((acc, dente) => {
-    acc[dente] = "SAUDAVEL";
-    return acc;
-  }, {});
-
-const itensParaDentes = (itens = []) => {
-  const estado = criarDentesIniciais();
-
-  itens.forEach((item) => {
-    if (item.dente && item.statusDente) {
-      estado[item.dente] = item.statusDente;
-    }
-  });
-
-  return estado;
-};
-
-const dentesParaItens = (dentes) =>
-  DENTES.map((dente) => ({
-    dente,
-    statusDente: dentes[dente] || "SAUDAVEL",
-  }));
-
-const erroNaoCritico = (resultado) =>
-  resultado.status === 400 ||
-  resultado.status === 403 ||
-  resultado.status === 404 ||
-  resultado.message?.toLowerCase().includes("não encontrado") ||
-  resultado.message?.toLowerCase().includes("nao encontrado");
+import { useState, useCallback } from "react";
+// Importando os services com o padrão nomeado correto
+import * as agendamentoService from "../services/agendamentoService"; 
+import * as prontuarioService from "../services/prontuarioService";   
 
 const formInicial = {
   queixaPrincipal: "",
   achadoClinico: "",
   alergiasHistorico: "",
   procedimentoRealizado: "",
-  material: "",
   observacoes: "",
   orientacoesPaciente: "",
 };
@@ -53,225 +15,111 @@ const formInicial = {
 export const useFichaConsulta = (id) => {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
-
   const [etapaAtual, setEtapaAtual] = useState(1);
+  
   const [agendamento, setAgendamento] = useState(null);
   const [paciente, setPaciente] = useState(null);
   const [prontuario, setProntuario] = useState(null);
-  const [odontograma, setOdontograma] = useState(null);
-  const [dentes, setDentes] = useState(criarDentesIniciais());
   const [form, setForm] = useState(formInicial);
 
   const atualizarForm = (campo, valor) => {
-    setForm((prev) => ({
-      ...prev,
-      [campo]: valor,
-    }));
+    setForm((prev) => ({ ...prev, [campo]: valor }));
   };
 
   const carregarDados = useCallback(async () => {
     if (!id) return;
-
     try {
       setCarregando(true);
       setErro(null);
 
-      const agendamentoResultado =
-        await fichaConsultaService.buscarAgendamento(id);
-
-      if (agendamentoResultado.error) {
-        setErro(agendamentoResultado.message);
+      // 1. Nome exato do seu service: buscarAgendamentoPorId
+      const resAgendamento = await agendamentoService.buscarAgendamentoPorId(id);
+      if (resAgendamento.error) {
+        setErro(resAgendamento.message);
         return;
       }
 
-      const agendamentoData = agendamentoResultado.data;
-      setAgendamento(agendamentoData);
+      const dadosAgendamento = resAgendamento.data;
+      setAgendamento(dadosAgendamento);
 
-      const pacienteId =
-        agendamentoData.pacienteId || agendamentoData.paciente?.id;
-
-      if (pacienteId) {
-        const pacienteResultado =
-          await fichaConsultaService.buscarPaciente(pacienteId);
-
-        if (!pacienteResultado.error) {
-          setPaciente(pacienteResultado.data);
-        }
+      // 2. Aproveitando os dados do paciente que sua API já traz anexado
+      if (dadosAgendamento.paciente) {
+        setPaciente(dadosAgendamento.paciente);
       }
 
-      const prontuarioResultado =
-        await fichaConsultaService.buscarProntuarioPorAgendamento(id);
-
-      if (!prontuarioResultado.error) {
-        const prontuarioData = prontuarioResultado.data;
-
-        setProntuario(prontuarioData);
-
-        setForm((prev) => ({
-          ...prev,
-          queixaPrincipal: prontuarioData.queixaPrincipal || "",
-          achadoClinico: prontuarioData.achadoClinico || "",
-          alergiasHistorico: prontuarioData.alergiasHistorico || "",
-          procedimentoRealizado: prontuarioData.procedimentoRealizado || "",
-          material: prontuarioData.material || "",
-          observacoes: prontuarioData.observacoes || "",
-          orientacoesPaciente: prontuarioData.orientacoesPaciente || "",
-        }));
-      } else if (erroNaoCritico(prontuarioResultado)) {
-        setProntuario(null);
-      } else {
-        setErro(prontuarioResultado.message);
+      // 3. CORRIGIDO: Nome exato da sua função: buscarProntuarioPorAgendamento
+      const resProntuario = await prontuarioService.buscarProntuarioPorAgendamento(id);
+      if (!resProntuario.error && resProntuario.data) {
+        const pData = resProntuario.data;
+        setProntuario(pData);
+        setForm({
+          queixaPrincipal: pData.queixaPrincipal || "",
+          achadoClinico: pData.achadoClinico || "",
+          alergiasHistorico: pData.alergiasHistorico || "",
+          procedimentoRealizado: pData.procedimentoRealizado || "",
+          observacoes: pData.observacoes || "",
+          orientacoesPaciente: pData.orientacoesPaciente || "",
+        });
       }
 
-      const odontogramaResultado =
-        await odontogramaService.buscarPorAgendamento(id);
-
-      if (!odontogramaResultado.error) {
-        setOdontograma(odontogramaResultado.data);
-        setDentes(itensParaDentes(odontogramaResultado.data?.itens));
-      } else if (erroNaoCritico(odontogramaResultado)) {
-        setOdontograma(null);
-        setDentes(criarDentesIniciais());
-      } else {
-        setErro(odontogramaResultado.message);
+      // 4. Sincronização de Etapas baseada no statusConsulta real do banco
+      const status = dadosAgendamento.statusConsulta?.toUpperCase();
+      
+      if (status === "AGENDADO") {
+        setEtapaAtual(1);
+      } else if (status === "PENDENTE") {
+        setEtapaAtual(2); // Se já está PENDENTE, joga direto na tela de avaliação/anamnese
+      } else if (["CONCLUIDO", "FINALIZADO", "CONCLUIDA"].includes(status)) {
+        setEtapaAtual(4); // Se já encerrou, joga para o modo leitura estática
       }
 
-      const status = agendamentoData.statusConsulta;
-
-      if (status === "ATENDIMENTO") {S
-        setEtapaAtual(2);
-      }
-
-      if (status === "CONCLUIDO") {
-        setEtapaAtual(4);
-      }
-    } catch (error) {
-      console.error(error);
-      setErro("Erro ao carregar ficha da consulta.");
+    } catch (e) {
+      console.error(e);
+      setErro("Erro ao carregar os dados da consulta.");
     } finally {
       setCarregando(false);
     }
   }, [id]);
 
-  const iniciarAtendimento = async () => {
-  const resultado =
-    await fichaConsultaService.atualizarStatusAgendamento(
-      id,
-      "ATENDIMENTO"
-    );
-
-  if (resultado.error) {
-    return resultado;
-  }
-
-  setAgendamento(resultado.data);
-  setEtapaAtual(2);
-
-  return resultado;
-};
-
-  const salvarOuAtualizarProntuario = async () => {
-    const payloadBase = {
-      queixaPrincipal: form.queixaPrincipal,
-      achadoClinico: form.achadoClinico,
-      alergiasHistorico: form.alergiasHistorico,
-      procedimentoRealizado: form.procedimentoRealizado,
-      material: form.material,
-      observacoes: form.observacoes,
-      orientacoesPaciente: form.orientacoesPaciente,
+  const iniciarAtendimentoNoBackend = async () => {
+    // Particularidade: Enviando o ID e o status "PENDENTE" para contornar o bug do ENUM no backend
+    // Usando seu método genérico: atualizarAgendamento
+    const payload = {
+      id: Number(id),
+      statusConsulta: "PENDENTE"
     };
 
-    const resultado = prontuario?.id
-      ? await fichaConsultaService.atualizarProntuario({
-          id: prontuario.id,
-          ...payloadBase,
-        })
-      : await fichaConsultaService.criarProntuario({
-          agendamentoId: Number(id),
-          ...payloadBase,
-        });
-
+    const resultado = await agendamentoService.atualizarAgendamento(payload);
     if (!resultado.error) {
-      setProntuario(resultado.data);
+      setAgendamento(resultado.data);
     }
-
     return resultado;
   };
 
-  const salvarOuAtualizarOdontograma = async () => {
-    const pacienteId =
-      agendamento?.pacienteId || agendamento?.paciente?.id;
+  const consolidarConsulta = async () => {
+    const payloadProntuario = {
+      ...form,
+      agendamentoId: Number(id),
+    };
 
-    const itens = dentesParaItens(dentes);
+    // CORRIGIDO: Usando atualizarProntuario e criarProntuario conforme seu arquivo prontuarioService.js
+    const resProntuario = prontuario?.id
+      ? await prontuarioService.atualizarProntuario({ id: prontuario.id, ...payloadProntuario })
+      : await prontuarioService.criarProntuario(payloadProntuario);
 
-    const resultado = odontograma?.id
-      ? await odontogramaService.atualizarOdontograma({
-          id: odontograma.id,
-          itens,
-        })
-      : await odontogramaService.criarOdontograma({
-          pacienteId: Number(pacienteId),
-          agendamentoId: Number(id),
-          itens,
-        });
+    if (resProntuario.error) return resProntuario;
 
-    if (!resultado.error) {
-      setOdontograma(resultado.data);
-      setDentes(itensParaDentes(resultado.data?.itens));
+    // Atualiza o status do agendamento para CONCLUIDO usando seu service generic
+    const payloadStatus = {
+      id: Number(id),
+      statusConsulta: "CONCLUIDO"
+    };
+
+    const resStatus = await agendamentoService.atualizarAgendamento(payloadStatus);
+    if (!resStatus.error) {
+      setAgendamento(resStatus.data);
     }
-
-    return resultado;
-  };
-
-  const salvarAvaliacao = async () => {
-    const prontuarioResultado =
-      await salvarOuAtualizarProntuario();
-
-    if (prontuarioResultado.error) {
-      return prontuarioResultado;
-    }
-
-    const odontogramaResultado =
-      await salvarOuAtualizarOdontograma();
-
-    if (odontogramaResultado.error) {
-      return odontogramaResultado;
-    }
-
-    setEtapaAtual(3);
-
-    return { error: false };
-  };
-
-  const encerrarConsulta = async () => {
-    const prontuarioResultado =
-      await salvarOuAtualizarProntuario();
-
-    if (prontuarioResultado.error) {
-      return prontuarioResultado;
-    }
-
-    const odontogramaResultado =
-      await salvarOuAtualizarOdontograma();
-
-    if (odontogramaResultado.error) {
-      return odontogramaResultado;
-    }
-
-    const statusResultado =
-      await fichaConsultaService.atualizarStatusAgendamento(
-        id,
-        "CONCLUIDO"
-      );
-
-    if (statusResultado.error) {
-      return statusResultado;
-    }
-
-    setAgendamento(statusResultado.data);
-    setEtapaAtual(4);
-
-    return { error: false };
+    return resStatus;
   };
 
   return {
@@ -281,15 +129,10 @@ export const useFichaConsulta = (id) => {
     setEtapaAtual,
     agendamento,
     paciente,
-    prontuario,
-    odontograma,
-    dentes,
-    setDentes,
     form,
     atualizarForm,
     carregarDados,
-    iniciarAtendimento,
-    salvarAvaliacao,
-    encerrarConsulta,
+    iniciarAtendimentoNoBackend,
+    consolidarConsulta,
   };
 };

@@ -4,14 +4,19 @@ import { useAuth } from "../contexts/AuthContext";
 import { fazerLogin } from "../services/authService";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import Modal from "../components/Modal";
 import { useNavigate } from "react-router-dom";
+import logoOdontoTrak from "../assets/img/odontotrak.png";
 
 const Login = () => {
-  const { login } = useAuth(); // Função que salva o token no Contexto
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [carregando, setCarregando] = useState(false);
+
+  const [exibirModal, setExibirModal] = useState(false);
+  const [mensagemErro, setMensagemErro] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,7 +25,10 @@ const Login = () => {
     const resultado = await fazerLogin(email, senha, login);
 
     if (resultado.error) {
-      alert(resultado.message);
+      setMensagemErro(
+        resultado.message || "Credenciais inválidas. Tente novamente.",
+      );
+      setExibirModal(true);
       setCarregando(false);
     } else {
       navigate("/");
@@ -29,18 +37,17 @@ const Login = () => {
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-white font-sans">
-      
       {/* Lado Esquerdo: Imagem com Gradiente */}
       <div className="hidden md:flex md:w-1/2 lg:w-3/5 relative overflow-hidden">
-        <img 
-          src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=2070" 
-          alt="Clínica Odontológica" 
+        <img
+          src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=2070"
+          alt="Clínica Odontológica"
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-tr from-dentista-primary/90 to-dentista-secondary/40 flex flex-col justify-end p-16">
-          <h2 className="text-4xl font-bold text-white mb-4">OdontoTrack</h2>
+          <h2 className="text-4xl font-bold text-white mb-4">OdontoTrak</h2>
           <p className="text-white/80 text-xl max-w-md">
-            A gestão inteligente da sua clínica na palma da sua mão.
+            A gestão inteligente da sua clínica.
           </p>
         </div>
       </div>
@@ -48,9 +55,21 @@ const Login = () => {
       {/* Lado Direito: Formulário */}
       <div className="flex-1 flex items-center justify-center p-8 md:p-16 lg:p-24 bg-gray-50">
         <div className="w-full max-w-md">
+          <div className=" mb-15 flex justify-center">
+            <img
+              src={logoOdontoTrak}
+              alt="OdontoTrack"
+              className="w-72 h-auto object-contain"
+            />
+          </div>
+
           <div className="mb-10">
-            <h1 className="text-3xl font-bold text-dentista-title mb-2">Bem-vindo de volta</h1>
-            <p className="text-dentista-body opacity-70">Entre com suas credenciais para acessar o sistema.</p>
+            <h1 className="text-3xl font-bold text-dentista-title mb-2">
+              Bem-vindo de volta
+            </h1>
+            <p className="text-dentista-body opacity-70">
+              Entre com suas credenciais para acessar o sistema.
+            </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -63,7 +82,10 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <Mail className="absolute right-4 bottom-3.5 text-gray-400" size={20} />
+              <Mail
+                className="absolute right-4 bottom-3.5 text-gray-400"
+                size={20}
+              />
             </div>
 
             <div className="relative">
@@ -75,21 +97,32 @@ const Login = () => {
                 onChange={(e) => setSenha(e.target.value)}
                 required
               />
-              <Lock className="absolute right-4 bottom-3.5 text-gray-400" size={20} />
+              <Lock
+                className="absolute right-4 bottom-3.5 text-gray-400"
+                size={20}
+              />
             </div>
 
             <div className="flex items-center justify-between text-sm">
               <label className="flex items-center gap-2 cursor-pointer text-dentista-body">
-                <input type="checkbox" className="rounded border-gray-300 text-dentista-primary focus:ring-dentista-primary" />
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300 text-dentista-primary focus:ring-dentista-primary"
+                />
                 Lembrar de mim
               </label>
-              <a href="#" className="text-dentista-primary font-semibold hover:underline">Esqueceu a senha?</a>
+              <a
+                href="#"
+                className="text-dentista-primary font-semibold hover:underline"
+              >
+                Esqueceu a senha?
+              </a>
             </div>
 
-            <Button 
-              type="submit" 
-              variant="primary" 
-              className="w-full py-4 text-lg" 
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full py-4 text-lg"
               icon={LogIn}
               disabled={carregando}
             >
@@ -98,10 +131,19 @@ const Login = () => {
           </form>
 
           <p className="mt-8 text-center text-sm text-dentista-body opacity-60">
-            © 2026 OdontoTrack. Todos os direitos reservados.
+            © 2026 OdontoTrak. Todos os direitos reservados.
           </p>
         </div>
       </div>
+
+      {/* RENDERIZAÇÃO DO MODAL */}
+      {exibirModal && (
+        <Modal
+          type="error"
+          message={mensagemErro}
+          onClose={() => setExibirModal(false)}
+        />
+      )}
     </div>
   );
 };
