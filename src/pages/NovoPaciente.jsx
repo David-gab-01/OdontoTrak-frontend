@@ -16,7 +16,6 @@ import {
 
 import {
   apenasNumeros,
-  validarCPF,
   validarEmail,
   validarTelefone,
 } from "../utils/validadores";
@@ -83,8 +82,8 @@ const NovoPaciente = () => {
       novosErros.nome = "Nome obrigatório";
     }
 
-    if (!validarCPF(formData.cpf)) {
-      novosErros.cpf = "CPF inválido";
+    if (!formData.cpf || apenasNumeros(formData.cpf).length !== 11) {
+      novosErros.cpf = "CPF incompleto ou obrigatório";
     }
 
     if (!formData.dataNascimento) {
@@ -272,10 +271,10 @@ const NovoPaciente = () => {
 
       {modal.open && (
         <Modal
-  type={modal.type}
-  message={modal.message}
-  onClose={fecharModal}
-/>
+          type={modal.type}
+          message={modal.message}
+          onClose={fecharModal}
+        />
       )}
     </div>
   );

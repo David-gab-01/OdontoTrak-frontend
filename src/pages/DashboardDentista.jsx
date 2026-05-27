@@ -14,32 +14,64 @@ const DashboardDentista = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [busca, setBusca] = useState("");
-  
-  // Estado que gerencia a data selecionada no calendário
   const [dataSelecionada, setDataSelecionada] = useState(new Date());
   
   const { pacientes, carregando: carregandoPacientes, carregarPacientes } = usePacientes();
 
   const {
-    agendamentos,       // Dados retornados de carregarMeusAgendamentos()
-    resumoDashboard,    // Dados retornados de carregarResumoDashboard()
+    agendamentos,
     carregando: carregandoAgendamentos,
-    carregarResumoDashboard,
     carregarMeusAgendamentos
   } = useAgendamentos();
 
-  // Carrega os dados iniciais do Dentista Logado baseados no Token
   const carregarDadosDashboard = useCallback(() => {
     carregarPacientes();
-    carregarResumoDashboard(); // Popula o 'resumoDashboard' (agendados, pendentes, concluidos, cancelados)
-    carregarMeusAgendamentos();  // Popula o array 'agendamentos' com as consultas dele
-  }, [carregarPacientes, carregarResumoDashboard, carregarMeusAgendamentos]);
+    carregarMeusAgendamentos();
+  }, [carregarPacientes, carregarMeusAgendamentos]);
 
   useEffect(() => {
     carregarDadosDashboard();
   }, [carregarDadosDashboard]);
 
-  // Auxiliar para formatar a exibição da data por extenso, igual ao dashboard principal
+  // 1. PRIMEIRO: FILTRAR AS CONSULTAS DO DENTISTA BASEADO NO DIA SELECIONADO
+  const minhasConsultasDoDia = useMemo(() => {
+    if (!agendamentos || agendamentos.length === 0) return [];
+    
+    const dataAlvoStr = dataSelecionada.toLocaleDateString('pt-BR');
+    
+    return agendamentos.filter((consulta) => {
+      if (!consulta.dataInicio) return false;
+      const dataConsultaStr = new Date(consulta.dataInicio).toLocaleDateString('pt-BR');
+      return dataConsultaStr === dataAlvoStr;
+    });
+  }, [agendamentos, dataSelecionada]);
+
+  // 2. SEGUNDO: CALCULAR OS INDICADORES DINAMICAMENTE BASEADO APENAS NAS CONSULTAS DO DIA FILTRADO
+  const resumoCalculadoFront = useMemo(() => {
+    const contagem = {
+      agendados: 0,
+      pendentes: 0, // Representa o "Em Atendimento"
+      concluidos: 0,
+      cancelados: 0,
+    };
+
+    minhasConsultasDoDia.forEach((consulta) => {
+      const status = consulta.statusConsulta?.toUpperCase();
+
+      if (status === "AGENDADO") {
+        contagem.agendados++;
+      } else if (status === "PENDENTE" || status === "EM_ANDAMENTO") {
+        contagem.pendentes++;
+      } else if (["CONCLUIDO", "FINALIZADO", "CONCLUIDA"].includes(status)) {
+        contagem.concluidos++;
+      } else if (["CANCELADO", "CANCELADA"].includes(status)) {
+        contagem.cancelados++;
+      }
+    });
+
+    return contagem;
+  }, [minhasConsultasDoDia]); 
+
   const formatarDataExtenso = (data) => {
     return data.toLocaleDateString("pt-BR", {
       weekday: "long",
@@ -49,7 +81,6 @@ const DashboardDentista = () => {
     });
   };
 
-  // --- LÓGICA DE FILTRAGEM DA BUSCA DE PACIENTES ---
   const normalizarTexto = (texto = "") => String(texto).toLowerCase().trim();
   const normalizarCpf = (valor = "") => String(valor).replace(/\D/g, "");
   const termoBusca = normalizarTexto(busca);
@@ -68,30 +99,17 @@ const DashboardDentista = () => {
     });
   }, [pacientes, termoBusca, termoCpf, buscaNumerica]);
 
-
-  // --- REATIVIDADE POR DATA SELECIONADA ---
-  const minhasConsultasDoDia = useMemo(() => {
-    if (!agendamentos || agendamentos.length === 0) return [];
-    
-    const dataAlvoStr = dataSelecionada.toLocaleDateString('pt-BR'); // "DD/MM/YYYY"
-    
-    return agendamentos.filter((consulta) => {
-      if (!consulta.dataInicio) return false;
-      const dataConsultaStr = new Date(consulta.dataInicio).toLocaleDateString('pt-BR');
-      return dataConsultaStr === dataAlvoStr;
-    });
-  }, [agendamentos, dataSelecionada]);
-
-
-  // Cores de mapeamento para o ListItem do fluxo
+  // Alinhamento visual das cores do fluxo de trabalho baseado nos status reais
   const getStatusColor = (status) => {
     const cores = {
       AGENDADO: "text-blue-500 bg-blue-50 border-blue-100",
       EM_ANDAMENTO: "text-orange-500 bg-orange-50 border-orange-100",
+      PENDENTE: "text-orange-500 bg-orange-50 border-orange-100",
       CONCLUIDO: "text-green-500 bg-green-50 border-green-100",
+      CONCLUIDA: "text-green-500 bg-green-50 border-green-100",
       FINALIZADO: "text-green-500 bg-green-50 border-green-100",
-      PENDENTE: "text-gray-500 bg-gray-50 border-gray-100",
       CANCELADO: "text-red-500 bg-red-50 border-red-100",
+      CANCELADA: "text-red-500 bg-red-50 border-red-100",
     };
     return cores[status?.toUpperCase()] || "text-gray-500 bg-gray-50 border-gray-100";
   };
@@ -100,10 +118,8 @@ const DashboardDentista = () => {
 
   return (
     <>
-      {/* Header Contextualizado para o Profissional */}
       <WelcomeHeader userName={`Dr(a). ${nomeDoutor}`} role="Cirurgião Dentista — Minha Agenda Privada" />
 
-      {/* Buscar Pacientes */}
       <h1 className="text-2xl font-bold text-dentista-title mb-6 mt-4">
         Buscar Pacientes
       </h1>
@@ -148,22 +164,20 @@ const DashboardDentista = () => {
         </div>
       )}
 
-      {/* Indicadores Gerais do Dentista Logado */}
-      <h1 className="text-2xl font-bold text-dentista-title mb-6">
-        Meu Desempenho Geral
+      <h1 className="text-2xl font-bold text-dentista-title mb-2">
+        Meu Desempenho Diário
       </h1>
-      <StatsGroup 
-        dados={resumoDashboard} 
-        carregando={carregandoAgendamentos || !resumoDashboard}
-      />
-
-      {/* Identificador Dinâmico de Data - Idêntico ao Principal */}
       <p className="text-sm text-gray-500 mb-4">
         Exibindo dados para o dia:{" "}
         <strong className="capitalize">{formatarDataExtenso(dataSelecionada)}</strong>
       </p>
       
-      {/* Agenda clínica filtrada e reativa para o Dentista Logado */}
+      {/* 🎯 Agora o StatsGroup reflete dinamicamente as estatísticas do dia selecionado */}
+      <StatsGroup 
+        dados={resumoCalculadoFront} 
+        carregando={carregandoAgendamentos}
+      />
+      
       <AgendaSection 
         dataSelecionada={dataSelecionada} 
         onDataAlterada={setDataSelecionada} 
@@ -171,7 +185,6 @@ const DashboardDentista = () => {
         carregando={carregandoAgendamentos}
       />
 
-      {/* Fluxo de Atendimento Otimizado por Data */}
       <ListContainer 
         title={`Meu Fluxo de Trabalho — ${dataSelecionada.toLocaleDateString('pt-BR')}`}
         columns={{ 
@@ -190,7 +203,7 @@ const DashboardDentista = () => {
               badgeText={atendimento.statusConsulta?.replace("_", " ") || "AGENDADO"}
               badgeColor={getStatusColor(atendimento.statusConsulta)}
               actionLabel={
-                ['CONCLUIDO', 'FINALIZADO'].includes(atendimento.statusConsulta?.toUpperCase()) 
+                ['CONCLUIDO', 'FINALIZADO', 'CONCLUIDA'].includes(atendimento.statusConsulta?.toUpperCase()) 
                   ? "Ver Resumo" 
                   : "Atender Paciente"
               }

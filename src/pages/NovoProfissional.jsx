@@ -16,7 +16,6 @@ import {
 
 import {
   apenasNumeros,
-  validarCPF,
   validarEmail,
   validarTelefone,
   validarSenha,
@@ -94,8 +93,8 @@ const NovoProfissional = () => {
       novosErros.senha = "A senha deve ter pelo menos 6 caracteres";
     }
 
-    if (formData.cpf && !validarCPF(formData.cpf)) {
-      novosErros.cpf = "CPF inválido";
+    if (formData.cpf && apenasNumeros(formData.cpf).length !== 11) {
+      novosErros.cpf = "CPF incompleto";
     }
 
     if (formData.telefone && !validarTelefone(formData.telefone)) {

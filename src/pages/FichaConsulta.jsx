@@ -32,6 +32,35 @@ const ETAPAS = [
   { id: 4, label: "Conclusão" },
 ];
 
+const PrintInfoBox = ({ label, value, highlight }) => (
+  <div className="print-info-box">
+    <p className="print-info-label">{label}</p>
+    <p className={highlight ? "print-info-value print-success" : "print-info-value"}>
+      {value}
+    </p>
+  </div>
+);
+
+const PrintTextBlock = ({ title, children, muted = false }) => (
+  <div className="print-text-block">
+    <p className="print-field-title">{title}</p>
+    <div className={muted ? "print-field-box print-muted" : "print-field-box"}>
+      {children || "Não informado"}
+    </div>
+  </div>
+);
+
+const PrintSectionTitle = ({ children }) => (
+  <h2 className="print-section-title">{children}</h2>
+);
+
+const PrintFooter = ({ page }) => (
+  <div className="print-footer">
+    <span>OdontoTrak - Sistema de Gestão Odontológica</span>
+    <span>Página {page} de 2</span>
+  </div>
+);
+
 const FichaConsulta = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -57,43 +86,46 @@ const FichaConsulta = () => {
   const { dentes, setDentes, carregarPorAgendamento, salvarOdontograma } =
     useOdontograma();
 
-  // Função que dispara a impressão 
   const handlePrint = useReactToPrint({
     contentRef: componentRef,
-    documentTitle: `Ficha_Consulta_${id}`,
+    documentTitle: `Prontuario_Odontologico_${id}`,
   });
 
-  // Carrega todos os ecossistemas de dados assim que o ID da URL bater na tela
   useEffect(() => {
     carregarDados();
     carregarPorAgendamento(id);
   }, [id, carregarDados, carregarPorAgendamento]);
 
-  // Validação para travar a tela em modo leitura se já concluído ou cancelado
   const statusAtual = agendamento?.statusConsulta?.toUpperCase();
-  
-  // Verifica especificamente se está cancelado
-  const consultaCancelada = ["CANCELADO", "CANCELADA"].includes(statusAtual);
-  
-  // Se estiver concluída OU cancelada, joga para o modo leitura estático
-  const consultaEncerrada = 
-    ["CONCLUIDO", "FINALIZADO", "CONCLUIDA"].includes(statusAtual) || consultaCancelada;
 
-  // Fallbacks de segurança para extração de dados do profissional e paciente
+  const consultaCancelada = ["CANCELADO", "CANCELADA"].includes(statusAtual);
+
+  const consultaEncerrada =
+    ["CONCLUIDO", "FINALIZADO", "CONCLUIDA"].includes(statusAtual) ||
+    consultaCancelada;
+
   const pacienteId =
     paciente?.id || agendamento?.pacienteId || agendamento?.paciente?.id;
-  const profesionalNome =
+
+  const profissionalNome =
     agendamento?.profissional?.nome ||
     agendamento?.nomeProfissional ||
     "Não informado";
+
   const profissionalCRO =
     agendamento?.profissional?.registroProfissional ||
     agendamento?.registroProfissional ||
     "Não informado";
 
-  // Formatadores de UI para datas e horários
+  const pacienteNome =
+    paciente?.nome || agendamento?.paciente?.nome || "Paciente não informado";
+
+  const pacienteTelefone = paciente?.telefone || "Não cadastrado";
+  const pacienteEmail = paciente?.email || "Não cadastrado";
+
   const formatarData = (iso) =>
     iso ? new Date(iso).toLocaleDateString("pt-BR") : "Não informado";
+
   const formatarHora = (iso) =>
     iso
       ? new Date(iso).toLocaleTimeString("pt-BR", {
@@ -102,10 +134,26 @@ const FichaConsulta = () => {
         })
       : "--:--";
 
-  // Ações de fluxo e navegação
+  const statusPrint = consultaCancelada
+    ? "CANCELADO"
+    : consultaEncerrada
+      ? "CONCLUÍDO"
+      : agendamento?.statusConsulta || "INDEFINIDO";
+
+  const faseFluxo = consultaCancelada
+    ? "Cancelada"
+    : consultaEncerrada
+      ? "Conclusão (Encerrada)"
+      : ETAPAS.find((etapa) => etapa.id === etapaAtual)?.label ||
+        "Não informado";
+
+  const textoNaoInformado =
+    "Não informado no formulário de fechamento de etapas.";
+
   const handleIniciarAtendimento = async () => {
     setModal({ type: "loading", message: "Iniciando atendimento..." });
-    const resultado = await iniciarAtendimentoNoBackend(); // Envia "PENDENTE" pro Back
+
+    const resultado = await iniciarAtendimentoNoBackend();
 
     if (resultado.error) {
       setModal({
@@ -114,6 +162,7 @@ const FichaConsulta = () => {
       });
       return;
     }
+
     setModal({ type: "success", message: "Atendimento iniciado com sucesso!" });
     setEtapaAtual(2);
   };
@@ -123,6 +172,7 @@ const FichaConsulta = () => {
       type: "loading",
       message: "Salvando alterações do Odontograma...",
     });
+
     const resultado = await salvarOdontograma({
       pacienteId,
       agendamentoId: Number(id),
@@ -135,16 +185,19 @@ const FichaConsulta = () => {
       });
       return;
     }
+
     setModal(null);
     setEtapaAtual(3);
   };
 
   const handleEncerrarConsulta = async () => {
     if (!confirmado) return;
+
     setModal({
       type: "loading",
       message: "Finalizando consulta e gerando prontuário...",
     });
+
     const resultado = await consolidarConsulta();
 
     if (resultado.error) {
@@ -154,20 +207,24 @@ const FichaConsulta = () => {
       });
       return;
     }
+
     setModal({ type: "success", message: "Consulta encerrada com sucesso!" });
     setEtapaAtual(4);
   };
 
-  if (consultaCarregando)
+  if (consultaCarregando) {
     return <Loading text="Carregando ficha de consulta..." />;
+  }
 
   if (consultaErro || !agendamento) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[24rem]">
         <AlertCircle size={48} className="text-red-500 mb-4" />
+
         <h2 className="text-xl font-bold text-dentista-title">
           Consulta não encontrada
         </h2>
+
         <p className="text-dentista-body mt-2">
           {consultaErro || "Não foi possível carregar os dados."}
         </p>
@@ -176,453 +233,695 @@ const FichaConsulta = () => {
   }
 
   return (
-    <div ref={componentRef} className="max-w-7xl mx-auto pb-10 px-4">
-      {/* Título e Identificação da Ficha */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-4xl font-bold text-dentista-title">
-            Ficha de consulta
-          </h1>
-          <p className="text-sm text-dentista-body mt-1">
-            Atendimento baseado no agendamento #{id}
-          </p>
-        </div>
-        
-        {/* Botão de impressão acionado condicionalmente se a consulta estiver encerrada/concluída */}
-        {consultaEncerrada && (
-          <div className="print:hidden">
-            <Button
-              variant="primary"
-              onClick={handlePrint}
-              className="flex items-center gap-2 bg-dentista-primary text-white px-4 py-2 rounded-clinica hover:bg-opacity-90 transition"
-            >
-              <Printer size={18} /> Imprimir Prontuário
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Alerta de Cancelamento (Sobrescreve o de conclusão se for o caso) */}
-      {consultaCancelada ? (
-        <div className="mb-6 rounded-clinica border border-red-200 bg-red-50 px-5 py-4 text-red-700 font-semibold flex items-center gap-2 animate-fade-in">
-          <XCircle size={20} /> Atenção: Esta consulta foi CANCELADA. Para realizar este atendimento, será necessário realizar um novo agendamento no sistema.
-        </div>
-      ) : (
-        consultaEncerrada && (
-          <div className="mb-6 rounded-clinica border border-green-200 bg-green-50 px-5 py-4 text-green-700 font-semibold flex items-center gap-2 animate-fade-in">
-            <Check size={20} /> Histórico Clínico - Esta consulta já foi encerrada e consolidada.
-          </div>
-        )
-      )}
-
-      {/* Bloco de Cards de Informações Básicas do Agendamento */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <InfoCard
-          title="Status do Agendamento"
-          value={agendamento.statusConsulta || "Indefinido"}
-          icon={ClipboardList}
-        />
-        <InfoCard
-          title="Data da Consulta"
-          value={formatarData(agendamento.dataInicio)}
-          icon={Calendar}
-          iconClassName="text-blue-500"
-          iconBgClassName="bg-blue-50"
-        />
-        <InfoCard
-          title="Horário Reservado"
-          value={`${formatarHora(agendamento.dataInicio)} - ${formatarHora(agendamento.dataFim)}`}
-          icon={Clock}
-          iconClassName="text-orange-500"
-          iconBgClassName="bg-orange-50"
-        />
-      </div>
-
-      {/* Cabeçalho de Perfil com Informações Básicas do Paciente e Profissional */}
-      <ProfileHeader
-        title={paciente?.nome || agendamento?.paciente?.nome || "Paciente"}
-        subtitle="Informações essenciais capturadas"
-        avatarText={paciente?.nome?.charAt(0).toUpperCase() || "P"}
-        fields={[
-          { label: "Telefone", value: paciente?.telefone || "Não cadastrado" },
-          { label: "E-mail", value: paciente?.email || "Não cadastrado" },
-          { label: "Dentista Responsável", value: profesionalNome },
-          { label: "CRO", value: profissionalCRO },
-        ]}
-        actions={
-          <div className="print:hidden">
-            <Button
-              variant="outline"
-              disabled={!pacienteId}
-              onClick={() => navigate(`/ficha-paciente/${pacienteId}`)}
-            >
-              Ver Histórico Completo
-            </Button>
-          </div>
-        }
-      />
-
-      {/* Stepper Superior */}
-      <div className="bg-white rounded-clinica shadow-sm border border-gray-100 p-6 mb-6 print:hidden">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-          {ETAPAS.map((etapa, index) => {
-            const ativa = consultaCancelada ? false : (etapaAtual === etapa.id && !consultaEncerrada);
-            const concluida = consultaCancelada ? true : (etapaAtual > etapa.id || consultaEncerrada);
-            return (
-              <React.Fragment key={etapa.id}>
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-11 h-11 rounded-full flex items-center justify-center font-bold border transition ${consultaCancelada ? "bg-red-500 text-white border-red-500" : concluida ? "bg-green-500 text-white border-green-500" : ativa ? "bg-dentista-primary text-white border-dentista-primary" : "bg-gray-100 text-gray-500 border-gray-200"}`}
-                  >
-                    {consultaCancelada ? <XCircle size={22} /> : concluida ? <Check size={22} /> : etapa.id}
-                  </div>
-                  <div>
-                    <p
-                      className={`text-sm font-bold ${ativa ? "text-dentista-primary" : "text-dentista-title"}`}
-                    >
-                      {etapa.label}
-                    </p>
-                    <p className="text-xs text-dentista-body">
-                      {consultaCancelada
-                        ? "Cancelada"
-                        : ativa
-                          ? "Etapa atual"
-                          : concluida
-                            ? "Concluída"
-                            : "Pendente"}
-                    </p>
-                  </div>
-                </div>
-                {index < ETAPAS.length - 1 && (
-                  <div className="hidden md:block text-gray-300 font-bold">
-                    &gt;
-                  </div>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* RENDERIZAÇÃO CONDICIONAL DE CONTEÚDO */}
-      {consultaEncerrada ? (
-        /* VISUALIZAÇÃO APENAS-LEITURA (Prontuário e Odontograma Consolidados) */
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-in">
-          <SectionCard title={consultaCancelada ? "AVALIAÇÃO (BLOQUEADA)" : "AVALIAÇÃO CLÍNICA"}>
-            <div className="space-y-4 text-sm text-dentista-body">
+    <div ref={componentRef} className="consulta-print-root max-w-7xl mx-auto pb-10 px-4">
+      {consultaEncerrada && (
+        <div className="hidden print:block print-document">
+          <section className="print-page">
+            <header className="print-header">
               <div>
-                <p className="font-bold text-dentista-title mb-1">
-                  Queixa principal
-                </p>
-                <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  {form.queixaPrincipal || (consultaCancelada ? "Agendamento cancelado pelo systema." : "Não informado")}
+                <h1>Ficha de Consulta Clínico</h1>
+                <p>
+                  Histórico Clínico Consolidado • Atendimento baseado no
+                  agendamento #{id}
                 </p>
               </div>
-              <div>
-                <p className="font-bold text-dentista-title mb-1">
-                  Achado clínico
-                </p>
-                <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  {form.achadoClinico || "Não informado"}
-                </p>
+
+              <div className="print-logo">
+                Odonto<span>Trak</span>
               </div>
-              <div>
-                <p className="font-bold text-dentista-title mb-1">
-                  Histórico & Alergias
-                </p>
-                <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  {form.alergiasHistorico || "Não informado"}
-                </p>
-              </div>
+            </header>
+
+            <div className="print-info-grid">
+              <PrintInfoBox
+                label="STATUS DA CONSULTA"
+                value={statusPrint}
+                highlight={!consultaCancelada}
+              />
+
+              <PrintInfoBox
+                label="DATA DA CONSULTA"
+                value={formatarData(agendamento.dataInicio)}
+              />
+
+              <PrintInfoBox
+                label="HORÁRIO RESERVADO"
+                value={`${formatarHora(agendamento.dataInicio)} - ${formatarHora(
+                  agendamento.dataFim
+                )}`}
+              />
             </div>
-          </SectionCard>
 
-          <SectionCard title={consultaCancelada ? "ODONTOGRAMA (BLOQUEADO)" : "ODONTOGRAMA CONSOLIDADO"}>
-            <div className="pointer-events-none opacity-60">
+            <section className="print-identification">
+              <h2>Dados de Identificação</h2>
+
+              <div className="print-identification-line" />
+
+              <div className="print-identification-grid">
+                <div className="print-id-row">
+                  <strong>Paciente:</strong>
+                  <span>{pacienteNome}</span>
+                </div>
+
+                <div className="print-id-row">
+                  <strong>Dentista Responsável:</strong>
+                  <span>{profissionalNome}</span>
+                </div>
+
+                <div className="print-id-row">
+                  <strong>Telefone:</strong>
+                  <span>{pacienteTelefone}</span>
+                </div>
+
+                <div className="print-id-row">
+                  <strong>Registro Profissional (CRO):</strong>
+                  <span>{profissionalCRO}</span>
+                </div>
+
+                <div className="print-id-row">
+                  <strong>E-mail:</strong>
+                  <span>{pacienteEmail}</span>
+                </div>
+
+                <div className="print-id-row">
+                  <strong>Fase do Fluxo:</strong>
+                  <span>{faseFluxo}</span>
+                </div>
+              </div>
+            </section>
+
+            <div className="print-clinical-grid">
+              <section>
+                <PrintSectionTitle>
+                  {consultaCancelada
+                    ? "AVALIAÇÃO BLOQUEADA"
+                    : "AVALIAÇÃO CLÍNICA"}
+                </PrintSectionTitle>
+
+                <PrintTextBlock title="Queixa Principal">
+                  {form.queixaPrincipal ||
+                    (consultaCancelada
+                      ? "Agendamento cancelado pelo sistema."
+                      : "Não informado")}
+                </PrintTextBlock>
+
+                <PrintTextBlock title="Achado Clínico">
+                  {form.achadoClinico}
+                </PrintTextBlock>
+
+                <PrintTextBlock title="Histórico & Alergias">
+                  {form.alergiasHistorico}
+                </PrintTextBlock>
+              </section>
+
+              <section>
+                <PrintSectionTitle>
+                  {consultaCancelada
+                    ? "PROCEDIMENTOS BLOQUEADOS"
+                    : "PROCEDIMENTO E ORIENTAÇÕES"}
+                </PrintSectionTitle>
+
+                <PrintTextBlock
+                  title="Procedimento Realizado"
+                  muted={!form.procedimentoRealizado}
+                >
+                  {form.procedimentoRealizado || textoNaoInformado}
+                </PrintTextBlock>
+
+                <PrintTextBlock
+                  title="Observações Adicionais"
+                  muted={!form.observacoes}
+                >
+                  {form.observacoes || textoNaoInformado}
+                </PrintTextBlock>
+
+                <PrintTextBlock title="Orientações Pós-Consulta">
+                  {form.orientacoesPaciente || "Não informado"}
+                </PrintTextBlock>
+              </section>
+            </div>
+
+            <PrintFooter page={1} />
+          </section>
+
+          <section className="print-page print-page-break">
+            <PrintSectionTitle>
+              {consultaCancelada
+                ? "ODONTOGRAMA BLOQUEADO"
+                : "ODONTOGRAMA CONSOLIDADO"}
+            </PrintSectionTitle>
+
+            <p className="print-odontograma-subtitle">
+              Mapeamento anatômico e estático registrado para o prontuário
+              permanente do paciente.
+            </p>
+
+            <div className="print-odontograma-wrapper">
               <Odontograma
                 dentes={dentes}
                 onChange={() => {}}
                 disabled={true}
               />
             </div>
-          </SectionCard>
 
-          <SectionCard title={consultaCancelada ? "PROCEDIMENTOS (BLOQUEADO)" : "PROCEDIMENTO E ORIENTAÇÕES"}>
-            <div className="space-y-4 text-sm text-dentista-body">
-              <div>
-                <p className="font-bold text-dentista-title mb-1">
-                  Procedimento Realizado
-                </p>
-                <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  {form.procedimentoRealizado || "Não informado"}
-                </p>
+            <div className="print-signatures">
+              <div className="print-signature">
+                <div className="print-signature-line" />
+                <p>Dr(a). {profissionalNome}</p>
+                <span>Responsável Técnico</span>
               </div>
-              <div>
-                <p className="font-bold text-dentista-title mb-1">
-                  Observações adicionais
-                </p>
-                <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  {form.observacoes || "Não informado"}
-                </p>
-              </div>
-              {/* 🎯 Correção: Mostrando as orientações pós-consulta no modo leitura */}
-              <div>
-                <p className="font-bold text-dentista-title mb-1">
-                  Orientações pós-consulta
-                </p>
-                <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  {form.orientacoesPaciente || "Não informado"}
-                </p>
+
+              <div className="print-signature">
+                <div className="print-signature-line" />
+                <p>{pacienteNome}</p>
+                <span>Assinatura do Paciente</span>
               </div>
             </div>
-          </SectionCard>
+
+            <PrintFooter page={2} />
+          </section>
         </div>
-      ) : (
-        /* FLUXO INTERATIVO POR ETAPAS (Consulta Ativa) */
-        <>
-          {etapaAtual === 1 && (
-            <SectionCard title="Aguardando Início do Atendimento">
-              <div className="text-center py-8">
-                <Stethoscope
-                  size={44}
-                  className="mx-auto mb-4 text-dentista-primary animate-pulse"
-                />
-                <p className="text-dentista-body max-w-xl mx-auto mb-8">
-                  Confirme a presença do paciente e as informações de
-                  agendamento exibidas acima. Ao clicar no botão abaixo, a
-                  consulta começará oficialmente no sistema.
-                </p>
-                <Button
-                  variant="primary"
-                  icon={ArrowRight}
-                  onClick={handleIniciarAtendimento}
-                >
-                  Iniciar Atendimento Clínico
-                </Button>
+      )}
+
+      <div className="print:hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-dentista-title">
+              Ficha de consulta
+            </h1>
+
+            <p className="text-sm text-dentista-body mt-1">
+              Atendimento baseado no agendamento #{id}
+            </p>
+          </div>
+
+          {consultaEncerrada && (
+            <div className="print:hidden">
+              <Button
+                variant="primary"
+                onClick={handlePrint}
+                className="flex items-center gap-2 bg-dentista-primary text-white px-4 py-2 rounded-clinica hover:bg-opacity-90 transition"
+              >
+                <Printer size={18} /> Imprimir Prontuário
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {consultaCancelada ? (
+          <div className="mb-6 rounded-clinica border border-red-200 bg-red-50 px-5 py-4 text-red-700 font-semibold flex items-center gap-2 animate-fade-in">
+            <XCircle size={20} />
+            Atenção: Esta consulta foi CANCELADA. Para realizar este
+            atendimento, será necessário realizar um novo agendamento no sistema.
+          </div>
+        ) : (
+          consultaEncerrada && (
+            <div className="mb-6 rounded-clinica border border-green-200 bg-green-50 px-5 py-4 text-green-700 font-semibold flex items-center gap-2 animate-fade-in">
+              <Check size={20} />
+              Histórico Clínico - Esta consulta já foi encerrada e consolidada.
+            </div>
+          )
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <InfoCard
+            title="Status do Agendamento"
+            value={agendamento.statusConsulta || "Indefinido"}
+            icon={ClipboardList}
+          />
+
+          <InfoCard
+            title="Data da Consulta"
+            value={formatarData(agendamento.dataInicio)}
+            icon={Calendar}
+            iconClassName="text-blue-500"
+            iconBgClassName="bg-blue-50"
+          />
+
+          <InfoCard
+            title="Horário Reservado"
+            value={`${formatarHora(agendamento.dataInicio)} - ${formatarHora(
+              agendamento.dataFim
+            )}`}
+            icon={Clock}
+            iconClassName="text-orange-500"
+            iconBgClassName="bg-orange-50"
+          />
+        </div>
+
+        <ProfileHeader
+          title={pacienteNome}
+          subtitle="Informações essenciais capturadas"
+          avatarText={paciente?.nome?.charAt(0).toUpperCase() || "P"}
+          fields={[
+            { label: "Telefone", value: pacienteTelefone },
+            { label: "E-mail", value: pacienteEmail },
+            { label: "Dentista Responsável", value: profissionalNome },
+            { label: "CRO", value: profissionalCRO },
+          ]}
+          actions={
+            <div className="print:hidden">
+              <Button
+                variant="outline"
+                disabled={!pacienteId}
+                onClick={() => navigate(`/ficha-paciente/${pacienteId}`)}
+              >
+                Ver Histórico Completo
+              </Button>
+            </div>
+          }
+        />
+
+        <div className="bg-white rounded-clinica shadow-sm border border-gray-100 p-6 mb-6 print:hidden">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            {ETAPAS.map((etapa, index) => {
+              const ativa =
+                consultaCancelada
+                  ? false
+                  : etapaAtual === etapa.id && !consultaEncerrada;
+
+              const concluida =
+                consultaCancelada
+                  ? true
+                  : etapaAtual > etapa.id || consultaEncerrada;
+
+              return (
+                <React.Fragment key={etapa.id}>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-11 h-11 rounded-full flex items-center justify-center font-bold border transition ${
+                        consultaCancelada
+                          ? "bg-red-500 text-white border-red-500"
+                          : concluida
+                            ? "bg-green-500 text-white border-green-500"
+                            : ativa
+                              ? "bg-dentista-primary text-white border-dentista-primary"
+                              : "bg-gray-100 text-gray-500 border-gray-200"
+                      }`}
+                    >
+                      {consultaCancelada ? (
+                        <XCircle size={22} />
+                      ) : concluida ? (
+                        <Check size={22} />
+                      ) : (
+                        etapa.id
+                      )}
+                    </div>
+
+                    <div>
+                      <p
+                        className={`text-sm font-bold ${
+                          ativa
+                            ? "text-dentista-primary"
+                            : "text-dentista-title"
+                        }`}
+                      >
+                        {etapa.label}
+                      </p>
+
+                      <p className="text-xs text-dentista-body">
+                        {consultaCancelada
+                          ? "Cancelada"
+                          : ativa
+                            ? "Etapa atual"
+                            : concluida
+                              ? "Concluída"
+                              : "Pendente"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {index < ETAPAS.length - 1 && (
+                    <div className="hidden md:block text-gray-300 font-bold">
+                      &gt;
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+
+        {consultaEncerrada ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-in">
+            <SectionCard
+              title={
+                consultaCancelada ? "AVALIAÇÃO (BLOQUEADA)" : "AVALIAÇÃO CLÍNICA"
+              }
+            >
+              <div className="space-y-4 text-sm text-dentista-body">
+                <div>
+                  <p className="font-bold text-dentista-title mb-1">
+                    Queixa principal
+                  </p>
+
+                  <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    {form.queixaPrincipal ||
+                      (consultaCancelada
+                        ? "Agendamento cancelado pelo sistema."
+                        : "Não informado")}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-bold text-dentista-title mb-1">
+                    Achado clínico
+                  </p>
+
+                  <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    {form.achadoClinico || "Não informado"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-bold text-dentista-title mb-1">
+                    Histórico & Alergias
+                  </p>
+
+                  <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    {form.alergiasHistorico || "Não informado"}
+                  </p>
+                </div>
               </div>
             </SectionCard>
-          )}
 
-          {etapaAtual === 2 && (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <SectionCard
-                title="Anamnese & Avaliação"
-                subtitle="Preencha os dados obtidos na conversa inicial."
-              >
-                <div className="space-y-5">
-                  <Input
-                    isTextArea
-                    label="Queixa principal"
-                    rows={4}
-                    value={form.queixaPrincipal}
-                    onChange={(e) =>
-                      atualizarForm("queixaPrincipal", e.target.value)
-                    }
-                    placeholder="Ex: Paciente relata dor aguda no molar inferior ao ingerir líquidos gelados..."
+            <SectionCard
+              title={
+                consultaCancelada
+                  ? "ODONTOGRAMA (BLOQUEADO)"
+                  : "ODONTOGRAMA CONSOLIDADO"
+              }
+            >
+              <div className="pointer-events-none opacity-60">
+                <Odontograma
+                  dentes={dentes}
+                  onChange={() => {}}
+                  disabled={true}
+                />
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              title={
+                consultaCancelada
+                  ? "PROCEDIMENTOS (BLOQUEADO)"
+                  : "PROCEDIMENTO E ORIENTAÇÕES"
+              }
+            >
+              <div className="space-y-4 text-sm text-dentista-body">
+                <div>
+                  <p className="font-bold text-dentista-title mb-1">
+                    Procedimento Realizado
+                  </p>
+
+                  <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    {form.procedimentoRealizado || "Não informado"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-bold text-dentista-title mb-1">
+                    Observações adicionais
+                  </p>
+
+                  <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    {form.observacoes || "Não informado"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-bold text-dentista-title mb-1">
+                    Orientações pós-consulta
+                  </p>
+
+                  <p className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    {form.orientacoesPaciente || "Não informado"}
+                  </p>
+                </div>
+              </div>
+            </SectionCard>
+          </div>
+        ) : (
+          <>
+            {etapaAtual === 1 && (
+              <SectionCard title="Aguardando Início do Atendimento">
+                <div className="text-center py-8">
+                  <Stethoscope
+                    size={44}
+                    className="mx-auto mb-4 text-dentista-primary animate-pulse"
                   />
-                  <Input
-                    isTextArea
-                    label="Achado clínico"
-                    rows={4}
-                    value={form.achadoClinico}
-                    onChange={(e) =>
-                      atualizarForm("achadoClinico", e.target.value)
-                    }
-                    placeholder="Ex: Presença de infiltração na restauração de resina antiga..."
-                  />
-                  <Input
-                    isTextArea
-                    label="Alergias / Histórico de saúde"
-                    rows={3}
-                    value={form.alergiasHistorico}
-                    onChange={(e) =>
-                      atualizarForm("alergiasHistorico", e.target.value)
-                    }
-                    placeholder="Ex: Hipertenso controlado, alergia a penicilina..."
-                  />
+
+                  <p className="text-dentista-body max-w-xl mx-auto mb-8">
+                    Confirme a presença do paciente e as informações de
+                    agendamento exibidas acima. Ao clicar no botão abaixo, a
+                    consulta começará oficialmente no sistema.
+                  </p>
+
+                  <Button
+                    variant="primary"
+                    icon={ArrowRight}
+                    onClick={handleIniciarAtendimento}
+                  >
+                    Iniciar Atendimento Clínico
+                  </Button>
                 </div>
               </SectionCard>
+            )}
 
-              <div className="space-y-4">
+            {etapaAtual === 2 && (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <SectionCard
-                  title="Mapeamento Odontograma"
-                  subtitle="Selecione o dente para alterar o status em tempo real."
+                  title="Anamnese & Avaliação"
+                  subtitle="Preencha os dados obtidos na conversa inicial."
                 >
-                  <Odontograma dentes={dentes} onChange={setDentes} />
-                </SectionCard>
-              </div>
-
-              <div className="xl:col-span-2 flex justify-end">
-                <Button
-                  variant="primary"
-                  icon={ArrowRight}
-                  onClick={handleAvancarParaProcedimento}
-                >
-                  Salvar e Ir para Procedimentos
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {etapaAtual === 3 && (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <SectionCard
-                title="Resumo Clínico Coletado"
-                subtitle="Consulta rápida da etapa anterior."
-              >
-                <div className="space-y-4 text-sm text-dentista-body">
-                  <div>
-                    <p className="font-semibold text-dentista-title">
-                      Queixa Principal
-                    </p>
-                    <p className="bg-gray-50 p-2 rounded-lg mt-1">
-                      {form.queixaPrincipal || "Nenhuma queixa registrada."}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-dentista-title">
-                      Achados Clínicos
-                    </p>
-                    <p className="bg-gray-50 p-2 rounded-lg mt-1">
-                      {form.achadoClinico || "Nenhum achado registrado."}
-                    </p>
-                  </div>
-                </div>
-              </SectionCard>
-
-              <SectionCard
-                title="Procedimento Realizado"
-                subtitle="Detalhamento técnico da intervenção de hoje."
-              >
-                <div className="space-y-5">
-                  <Input
-                    isTextArea
-                    label="Descrição técnica do procedimento"
-                    rows={5}
-                    value={form.procedimentoRealizado}
-                    onChange={(e) =>
-                      atualizarForm("procedimentoRealizado", e.target.value)
-                    }
-                    placeholder="Ex: Realizado isolamento absoluto, remoção de tecido cariado e nova restauração em resina composta no dente 46..."
-                  />
-                  <Input
-                    isTextArea
-                    label="Observações adicionais"
-                    rows={3}
-                    value={form.observacoes}
-                    onChange={(e) =>
-                      atualizarForm("observacoes", e.target.value)
-                    }
-                    placeholder="Ex: Recomendações de retorno em 6 meses passadas..."
-                  />
-                </div>
-              </SectionCard>
-
-              <div className="xl:col-span-2 flex justify-end gap-3">
-                <Button variant="ghost" onClick={() => setEtapaAtual(2)}>
-                  Voltar para Avaliação
-                </Button>
-                <Button
-                  variant="primary"
-                  icon={ArrowRight}
-                  onClick={() => setEtapaAtual(4)}
-                >
-                  Ir para Conclusão
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {etapaAtual === 4 && (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <SectionCard
-                title="Revisão Final da Consulta"
-                subtitle="Confira o prontuário completo antes de consolidar."
-              >
-                <div className="space-y-4 text-sm text-dentista-body">
-                  <div>
-                    <p className="font-bold text-dentista-title">
-                      Queixa Principal:
-                    </p>
-                    <p className="text-gray-600">
-                      {form.queixaPrincipal || "Não informada"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-bold text-dentista-title">
-                      Achados Clínicos:
-                    </p>
-                    <p className="text-gray-600">
-                      {form.achadoClinico || "Não informado"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-bold text-dentista-title">
-                      Procedimento Executado:
-                    </p>
-                    <p className="text-gray-600">
-                      {form.procedimentoRealizado || "Não informado"}
-                    </p>
-                  </div>
-                </div>
-              </SectionCard>
-
-              <SectionCard
-                title="Orientações & Encerramento"
-                subtitle="Finalização do atendimento e orientações ao paciente."
-              >
-                <div className="space-y-5">
-                  <Input
-                    isTextArea
-                    label="Orientações pós-consulta"
-                    rows={5}
-                    value={form.orientacoesPaciente}
-                    onChange={(e) =>
-                      atualizarForm("orientacoesPaciente", e.target.value)
-                    }
-                    placeholder="Ex: Evitar mastigação de alimentos excessivamente rígidos nas próximas duas horas..."
-                  />
-
-                  <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm text-dentista-body cursor-pointer hover:bg-gray-50 transition">
-                    <input
-                      type="checkbox"
-                      checked={confirmado}
-                      onChange={(e) => setConfirmado(e.target.checked)}
-                      className="mt-1 accent-dentista-primary"
+                  <div className="space-y-5">
+                    <Input
+                      isTextArea
+                      label="Queixa principal"
+                      rows={4}
+                      value={form.queixaPrincipal}
+                      onChange={(e) =>
+                        atualizarForm("queixaPrincipal", e.target.value)
+                      }
+                      placeholder="Ex: Paciente relata dor aguda no molar inferior ao ingerir líquidos gelados..."
                     />
-                    <span>
-                      Confirmo que precisei o prontuário de atendimento acima e
-                      autorizo a consolidação definitiva desta consulta.
-                    </span>
-                  </label>
+
+                    <Input
+                      isTextArea
+                      label="Achado clínico"
+                      rows={4}
+                      value={form.achadoClinico}
+                      onChange={(e) =>
+                        atualizarForm("achadoClinico", e.target.value)
+                      }
+                      placeholder="Ex: Presença de infiltração na restauração de resina antiga..."
+                    />
+
+                    <Input
+                      isTextArea
+                      label="Alergias / Histórico de saúde"
+                      rows={3}
+                      value={form.alergiasHistorico}
+                      onChange={(e) =>
+                        atualizarForm("alergiasHistorico", e.target.value)
+                      }
+                      placeholder="Ex: Hipertenso controlado, alergia a penicilina..."
+                    />
+                  </div>
+                </SectionCard>
+
+                <div className="space-y-4">
+                  <SectionCard
+                    title="Mapeamento Odontograma"
+                    subtitle="Selecione o dente para alterar o status em tempo real."
+                  >
+                    <Odontograma dentes={dentes} onChange={setDentes} />
+                  </SectionCard>
                 </div>
-              </SectionCard>
 
-              <div className="xl:col-span-2 flex justify-end gap-3">
-                <Button variant="ghost" onClick={() => setEtapaAtual(3)}>
-                  Voltar para Procedimento
-                </Button>
-                <Button
-                  variant="primary"
-                  disabled={!confirmado}
-                  onClick={handleEncerrarConsulta}
-                  className={!confirmado ? "opacity-50 cursor-not-allowed" : ""}
-                >
-                  Concluir e Encerrar Atendimento
-                </Button>
+                <div className="xl:col-span-2 flex justify-end">
+                  <Button
+                    variant="primary"
+                    icon={ArrowRight}
+                    onClick={handleAvancarParaProcedimento}
+                  >
+                    Salvar e Ir para Procedimentos
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
-        </>
-      )}
+            )}
 
-      {modal && (
-        <Modal
-          type={modal.type}
-          message={modal.message}
-          onClose={() => setModal(null)}
-        />
-      )}
+            {etapaAtual === 3 && (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <SectionCard
+                  title="Resumo Clínico Coletado"
+                  subtitle="Consulta rápida da etapa anterior."
+                >
+                  <div className="space-y-4 text-sm text-dentista-body">
+                    <div>
+                      <p className="font-semibold text-dentista-title">
+                        Queixa Principal
+                      </p>
+
+                      <p className="bg-gray-50 p-2 rounded-lg mt-1">
+                        {form.queixaPrincipal || "Nenhuma queixa registrada."}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold text-dentista-title">
+                        Achados Clínicos
+                      </p>
+
+                      <p className="bg-gray-50 p-2 rounded-lg mt-1">
+                        {form.achadoClinico || "Nenhum achado registrado."}
+                      </p>
+                    </div>
+                  </div>
+                </SectionCard>
+
+                <SectionCard
+                  title="Procedimento Realizado"
+                  subtitle="Detalhamento técnico da intervenção de hoje."
+                >
+                  <div className="space-y-5">
+                    <Input
+                      isTextArea
+                      label="Descrição técnica do procedimento"
+                      rows={5}
+                      value={form.procedimentoRealizado}
+                      onChange={(e) =>
+                        atualizarForm("procedimentoRealizado", e.target.value)
+                      }
+                      placeholder="Ex: Realizado isolamento absoluto, remoção de tecido cariado e nova restauração em resina composta no dente 46..."
+                    />
+
+                    <Input
+                      isTextArea
+                      label="Observações adicionais"
+                      rows={3}
+                      value={form.observacoes}
+                      onChange={(e) =>
+                        atualizarForm("observacoes", e.target.value)
+                      }
+                      placeholder="Ex: Recomendações de retorno em 6 meses passadas..."
+                    />
+                  </div>
+                </SectionCard>
+
+                <div className="xl:col-span-2 flex justify-end gap-3">
+                  <Button variant="ghost" onClick={() => setEtapaAtual(2)}>
+                    Voltar para Avaliação
+                  </Button>
+
+                  <Button
+                    variant="primary"
+                    icon={ArrowRight}
+                    onClick={() => setEtapaAtual(4)}
+                  >
+                    Ir para Conclusão
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {etapaAtual === 4 && (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <SectionCard
+                  title="Revisão Final da Consulta"
+                  subtitle="Confira o prontuário completo antes de consolidar."
+                >
+                  <div className="space-y-4 text-sm text-dentista-body">
+                    <div>
+                      <p className="font-bold text-dentista-title">
+                        Queixa Principal:
+                      </p>
+
+                      <p className="text-gray-600">
+                        {form.queixaPrincipal || "Não informada"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="font-bold text-dentista-title">
+                        Achados Clínicos:
+                      </p>
+
+                      <p className="text-gray-600">
+                        {form.achadoClinico || "Não informado"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="font-bold text-dentista-title">
+                        Procedimento Executado:
+                      </p>
+
+                      <p className="text-gray-600">
+                        {form.procedimentoRealizado || "Não informado"}
+                      </p>
+                    </div>
+                  </div>
+                </SectionCard>
+
+                <SectionCard
+                  title="Orientações & Encerramento"
+                  subtitle="Finalização do atendimento e orientações ao paciente."
+                >
+                  <div className="space-y-5">
+                    <Input
+                      isTextArea
+                      label="Orientações pós-consulta"
+                      rows={5}
+                      value={form.orientacoesPaciente}
+                      onChange={(e) =>
+                        atualizarForm("orientacoesPaciente", e.target.value)
+                      }
+                      placeholder="Ex: Evitar mastigação de alimentos excessivamente rígidos nas próximas duas horas..."
+                    />
+
+                    <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm text-dentista-body cursor-pointer hover:bg-gray-50 transition">
+                      <input
+                        type="checkbox"
+                        checked={confirmado}
+                        onChange={(e) => setConfirmado(e.target.checked)}
+                        className="mt-1 accent-dentista-primary"
+                      />
+
+                      <span>
+                        Confirmo que revisei o prontuário de atendimento acima e
+                        autorizo a consolidação definitiva desta consulta.
+                      </span>
+                    </label>
+                  </div>
+                </SectionCard>
+
+                <div className="xl:col-span-2 flex justify-end gap-3">
+                  <Button variant="ghost" onClick={() => setEtapaAtual(3)}>
+                    Voltar para Procedimento
+                  </Button>
+
+                  <Button
+                    variant="primary"
+                    disabled={!confirmado}
+                    onClick={handleEncerrarConsulta}
+                    className={!confirmado ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    Concluir e Encerrar Atendimento
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {modal && (
+          <Modal
+            type={modal.type}
+            message={modal.message}
+            onClose={() => setModal(null)}
+          />
+        )}
+      </div>
     </div>
   );
 };
