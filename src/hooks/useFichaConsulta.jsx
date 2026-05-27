@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
-// Importando os services com o padrão nomeado correto
 import * as agendamentoService from "../services/agendamentoService"; 
-import * as prontuarioService from "../services/prontuarioService";   
+import * as prontuarioService from "../services/prontuarioService";   
+import * as pacienteService from "../services/pacienteService"; 
 
 const formInicial = {
   queixaPrincipal: "",
@@ -18,7 +18,7 @@ export const useFichaConsulta = (id) => {
   const [etapaAtual, setEtapaAtual] = useState(1);
   
   const [agendamento, setAgendamento] = useState(null);
-  const [paciente, setPaciente] = useState(null);
+  const [paciente, setPaciente] = useState(null); // 🎯 Vai armazenar o paciente COMPLETO do banco agora
   const [prontuario, setProntuario] = useState(null);
   const [form, setForm] = useState(formInicial);
 
@@ -32,7 +32,7 @@ export const useFichaConsulta = (id) => {
       setCarregando(true);
       setErro(null);
 
-      // 1. Nome exato do seu service: buscarAgendamentoPorId
+      // 1. Busca o agendamento
       const resAgendamento = await agendamentoService.buscarAgendamentoPorId(id);
       if (resAgendamento.error) {
         setErro(resAgendamento.message);
@@ -42,12 +42,19 @@ export const useFichaConsulta = (id) => {
       const dadosAgendamento = resAgendamento.data;
       setAgendamento(dadosAgendamento);
 
-      // 2. Aproveitando os dados do paciente que sua API já traz anexado
-      if (dadosAgendamento.paciente) {
-        setPaciente(dadosAgendamento.paciente);
+      const pacienteIdReal = dadosAgendamento?.pacienteId || dadosAgendamento?.paciente?.id;
+
+      if (pacienteIdReal) {
+     
+        const resPacienteCompleto = await pacienteService.buscarPacientePorId(pacienteIdReal);
+        if (!resPacienteCompleto.error && resPacienteCompleto.data) {
+          setPaciente(resPacienteCompleto.data); 
+        } else if (dadosAgendamento.paciente) {
+          setPaciente(dadosAgendamento.paciente);
+        }
       }
 
-      // 3. CORRIGIDO: Nome exato da sua função: buscarProntuarioPorAgendamento
+      // 3. Busca o prontuário
       const resProntuario = await prontuarioService.buscarProntuarioPorAgendamento(id);
       if (!resProntuario.error && resProntuario.data) {
         const pData = resProntuario.data;
@@ -62,15 +69,14 @@ export const useFichaConsulta = (id) => {
         });
       }
 
-      // 4. Sincronização de Etapas baseada no statusConsulta real do banco
+      // 4. Sincronização de Etapas baseada no statusConsulta
       const status = dadosAgendamento.statusConsulta?.toUpperCase();
-      
       if (status === "AGENDADO") {
         setEtapaAtual(1);
       } else if (status === "PENDENTE") {
-        setEtapaAtual(2); // Se já está PENDENTE, joga direto na tela de avaliação/anamnese
+        setEtapaAtual(2); 
       } else if (["CONCLUIDO", "FINALIZADO", "CONCLUIDA"].includes(status)) {
-        setEtapaAtual(4); // Se já encerrou, joga para o modo leitura estática
+        setEtapaAtual(4); 
       }
 
     } catch (e) {
@@ -82,8 +88,6 @@ export const useFichaConsulta = (id) => {
   }, [id]);
 
   const iniciarAtendimentoNoBackend = async () => {
-    // Particularidade: Enviando o ID e o status "PENDENTE" para contornar o bug do ENUM no backend
-    // Usando seu método genérico: atualizarAgendamento
     const payload = {
       id: Number(id),
       statusConsulta: "PENDENTE"
@@ -102,14 +106,12 @@ export const useFichaConsulta = (id) => {
       agendamentoId: Number(id),
     };
 
-    // CORRIGIDO: Usando atualizarProntuario e criarProntuario conforme seu arquivo prontuarioService.js
     const resProntuario = prontuario?.id
       ? await prontuarioService.atualizarProntuario({ id: prontuario.id, ...payloadProntuario })
       : await prontuarioService.criarProntuario(payloadProntuario);
 
     if (resProntuario.error) return resProntuario;
 
-    // Atualiza o status do agendamento para CONCLUIDO usando seu service generic
     const payloadStatus = {
       id: Number(id),
       statusConsulta: "CONCLUIDO"
@@ -128,7 +130,7 @@ export const useFichaConsulta = (id) => {
     etapaAtual,
     setEtapaAtual,
     agendamento,
-    paciente,
+    paciente, 
     form,
     atualizarForm,
     carregarDados,

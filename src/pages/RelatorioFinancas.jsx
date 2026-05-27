@@ -1,13 +1,13 @@
-import React from 'react'
+import React from 'react';
+import ModuloEmDesenvolvimento from '../components/ModuloEmDesenvolvimento';
 
 const RelatorioFinancas = () => {
   return (
-    <div>
-      <h1>
-        Teste tela relatório financeiro
-      </h1>
-    </div>
-  )
-}
+    <ModuloEmDesenvolvimento 
+      titulo="Relatório Financeiro" 
+      descricao="Estamos melhorando o sistema. Em breve, este módulo estará disponível para você acompanhar o faturamento, fluxo de caixa e inadimplência em tempo real."
+    />
+  );
+};
 
-export default RelatorioFinancas
+export default RelatorioFinancas;

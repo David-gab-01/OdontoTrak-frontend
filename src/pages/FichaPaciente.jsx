@@ -6,7 +6,6 @@ import {
   Mail,
   CircleDot,
   AlertCircle,
-  Wrench,
 } from 'lucide-react';
 
 import { usePacientes } from '../hooks/usePacientes';
@@ -22,6 +21,7 @@ import SectionCard from '../components/SectionCard';
 import ProfileHeader from '../components/ProfileHeader';
 import Odontograma from '../components/Odontograma';
 import Modal from '../components/Modal';
+import ModuloEmDesenvolvimento from '../components/ModuloEmDesenvolvimento';
 
 const FichaPaciente = () => {
   const navigate = useNavigate();
@@ -63,10 +63,8 @@ const FichaPaciente = () => {
 
   const {
     dentes,
-    setDentes,
     carregando: carregandoOdontograma,
     carregarUltimoPorPaciente,
-    salvarOdontograma,
   } = useOdontograma();
 
   useEffect(() => {
@@ -148,55 +146,6 @@ const FichaPaciente = () => {
     };
 
     return classes[status?.toUpperCase()] || 'text-gray-600 bg-gray-100';
-  };
-
-  const handleSalvarOdontograma = async () => {
-    if (isRecepcao) {
-      setModal({
-        type: 'error',
-        message: 'A recepção não possui permissão para salvar odontograma.',
-      });
-
-      return;
-    }
-
-    const consultaAtual =
-      agendamentosPaciente.find((item) =>
-        ['EM_ANDAMENTO', 'AGENDADO'].includes(
-          item.statusConsulta?.toUpperCase()
-        )
-      ) || agendamentosPaciente[0];
-
-    if (!consultaAtual?.id) {
-      setModal({
-        type: 'error',
-        message: 'Nenhuma consulta encontrada para salvar o odontograma.',
-      });
-
-      return;
-    }
-
-    setModal({
-      type: 'loading',
-      message: 'Salvando odontograma...',
-    });
-
-    const resultado = await salvarOdontograma({
-      pacienteId: Number(id),
-      agendamentoId: consultaAtual.id,
-    });
-
-    if (!resultado.error) {
-      setModal({
-        type: 'success',
-        message: 'Odontograma salvo com sucesso!',
-      });
-    } else {
-      setModal({
-        type: 'error',
-        message: resultado.message || 'Erro ao salvar odontograma.',
-      });
-    }
   };
 
   if (carregandoPaciente || carregandoAgendamentos) {
@@ -422,30 +371,17 @@ const FichaPaciente = () => {
               <Loading fullScreen={false} text="Carregando odontograma..." />
             ) : (
               <div className="space-y-6">
-                <Odontograma dentes={dentes} onChange={setDentes} />
-
-                <div className="flex justify-end">
-                  <Button variant="primary" onClick={handleSalvarOdontograma}>
-                    Salvar Odontograma
-                  </Button>
-                </div>
+                <Odontograma dentes={dentes} disabled={true} />
               </div>
             )}
           </>
         )}
 
         {activeTab === 'historico' && !isRecepcao && (
-          <div className="flex flex-col items-center justify-center py-12 border border-dashed border-gray-200 bg-slate-50 rounded-[22px]">
-            <Wrench size={40} className="text-gray-400 mb-3 animate-pulse" />
-
-            <h4 className="font-semibold text-dentista-title mb-1">
-              Módulo Histórico Clínico
-            </h4>
-
-            <p className="text-sm text-dentista-body text-center max-w-sm">
-              Funcionalidade vinculada ao módulo de prontuários. Em desenvolvimento no backend.
-            </p>
-          </div>
+          <ModuloEmDesenvolvimento
+            titulo="Módulo Histórico Clínico"
+            descricao="Funcionalidade vinculada ao eixo de prontuários. Estamos melhorando a experiência e estruturando a base de dados no backend."
+          />
         )}
 
         {activeTab === 'dados' && (

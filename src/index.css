@@ -32,6 +32,10 @@ body {
 }
 
 
+/* ==========================================
+   🎯 Estilos agenda
+   ========================================== */
+
 /* 1. Remove bordas pesadas e deixa o fundo suave */
 .agenda-container .fc {
   --fc-border-color: #f3f4f6;
@@ -87,4 +91,23 @@ body {
 /* 6. Remove o botão de 'mais' e scrollbars feias */
 .agenda-container .fc-scroller {
   overflow: hidden !important;
+}
+
+
+/* AGENDADO / CONFIRMADO: Verde Esmeralda (#10B981) */
+.agenda-container .status-agendado {
+  background-color: #10B981 !important;
+  border-left: 4px solid #047857 !important; /* Detalhe lateral mais escuro */
+}
+
+/* CANCELADO: Vermelho Intenso (#EF4444) */
+.agenda-container .status-cancelado {
+  background-color: #EF4444 !important;
+  border-left: 4px solid #B91C1C !important;
+}
+
+/* CONCLUÍDO: Cinza Neutro Suave (#9CA3AF) */
+.agenda-container .status-concluido {
+  background-color: #E5E7EB !important; /* Fundo cinza bem claro para legibilidade */
+  border-left: 4px solid #9CA3AF !important;
 }

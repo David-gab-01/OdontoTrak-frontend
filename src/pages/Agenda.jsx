@@ -59,17 +59,29 @@ const Agenda = () => {
   // 5. Seleciona a fonte de dados correta para renderizar no calendário
   const listaParaExibir = ehDentista ? agendamentos : todosAgendamentos;
 
-  const eventos = listaParaExibir.map((a) => ({
-    id: a.id,
-    title: a.nomePaciente || "Paciente não informado",
-    start: a.dataInicio,
-    end: a.dataFim,
-    classNames: [`status-${a.statusConsulta?.toLowerCase()}`],
-    extendedProps: {
-      profissional: a.nomeProfissional,
-      status: a.statusConsulta,
-    },
-  }));
+  const eventos = listaParaExibir.map((a) => {
+    const statusNormalizado = a.statusConsulta?.toUpperCase();
+    
+    // Mapeamento de classe de estilização segura para o FullCalendar
+    let classeStatus = "status-agendado"; // Default / CONFIRMADO
+    if (statusNormalizado === "CANCELADO" || statusNormalizado === "CANCELADA") {
+      classeStatus = "status-cancelado";
+    } else if (["CONCLUIDO", "FINALIZADO", "CONCLUIDA"].includes(statusNormalizado)) {
+      classeStatus = "status-concluido";
+    }
+
+    return {
+      id: a.id,
+      title: a.nomePaciente || "Paciente não informado",
+      start: a.dataInicio,
+      end: a.dataFim,
+      classNames: [classeStatus], 
+      extendedProps: {
+        profissional: a.nomeProfissional,
+        status: a.statusConsulta,
+      },
+    };
+  });
 
   const handleNavigate = (action) => {
     const api = calendarRef.current.getApi();
@@ -155,7 +167,6 @@ const Agenda = () => {
           nowIndicator={true}
           slotEventOverlap={false}
           eventContent={renderEventCard}
-          // Redireciona o profissional ou admin ao clicar no card da consulta
           eventClick={(info) => navigate(`/ficha-consulta/${info.event.id}`)}
           dayHeaderContent={(args) => (
             <div className="py-2">
@@ -170,29 +181,32 @@ const Agenda = () => {
         />
       </div>
 
+     
       <div className="flex justify-center gap-10 mt-10 border-t pt-6 border-gray-100">
-        <StatusBadge color="bg-[#10B981]" label="Confirmado" />
-        <StatusBadge color="bg-blue-400" label="Aguardando" />
+        <StatusBadge color="bg-[#10B981]" label="Agendado" />
         <StatusBadge color="bg-red-500" label="Cancelado" />
-        <StatusBadge color="bg-gray-200" label="Concluído" />
+        <StatusBadge color="bg-gray-400" label="Concluído" />
       </div>
     </div>
   );
 };
 
 function renderEventCard(eventInfo) {
+  
+  const classes = eventInfo.event.classNames;
+  const ehConcluido = classes.includes("status-concluido");
+
   return (
-    <div className="flex flex-col h-full w-full justify-center p-1 cursor-pointer">
+    <div className={`flex flex-col h-full w-full justify-center p-1 cursor-pointer ${ehConcluido ? 'text-gray-600' : 'text-white'}`}>
       <div className="flex items-center gap-1 mb-0.5">
-        <Clock size={10} className="opacity-70" />
+        <Clock size={10} className="opacity-80" />
         <span className="text-[10px] font-bold">{eventInfo.timeText}</span>
       </div>
       <div className="font-bold text-[11px] leading-tight truncate">
         {eventInfo.event.title}
       </div>
-      {/* Remove redundância: Só mostra o nome do profissional se não estiver no painel exclusivo do dentista */}
       {eventInfo.event.extendedProps.profissional && (
-        <div className="text-[9px] opacity-90 truncate font-medium text-blue-900/80">
+        <div className={`text-[9px] opacity-90 truncate font-medium ${ehConcluido ? 'text-gray-500' : 'text-white/80'}`}>
           {eventInfo.event.extendedProps.profissional}
         </div>
       )}

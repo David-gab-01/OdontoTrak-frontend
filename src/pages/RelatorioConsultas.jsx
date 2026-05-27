@@ -1,13 +1,13 @@
-import React from 'react'
+import React from 'react';
+import ModuloEmDesenvolvimento from '../components/ModuloEmDesenvolvimento';
 
 const RelatorioConsultas = () => {
   return (
-    <div>
-      <h1>
-        Teste tela relatório de consultas
-      </h1>
-    </div>
-  )
-}
+    <ModuloEmDesenvolvimento 
+      titulo="Relatório de Consultas" 
+      descricao="Estamos melhorando o sistema. Em breve, este módulo estará disponível com gráficos avançados de agendamentos, faltas e produtividade profissional."
+    />
+  );
+};
 
-export default RelatorioConsultas
+export default RelatorioConsultas;
